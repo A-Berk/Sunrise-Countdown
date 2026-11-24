@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#151E29">
+<title>Sunrise Countdown</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=my_location" />
+
+<style>
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 20;
+  font-size: 20px;
+}
+
+#useLocation {
+  height: 40px; /* Match your input height */
+  width: 40px;  /* Optional: make it square */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.fields {
+  align-items: flex-end;
+}
+
+</style>
+
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #151E29;
+  --hero-bg: #202D3A;
+  --body-bg: #101720;
+  --panel: #263746;
+  --white: #F2F4F7;
+  --muted: #AAB4C0;
+  --dim: #687583;
+  --orange: #F0A33B;
+  --green: #55C98B;
+  --divider: #687583;
+  --radius: 14px;
+}
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--bg); }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh;
+  background: var(--bg); color: var(--white);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.page {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hero {
+  width: 100%;
+  background: var(--hero-bg);
+}
+.hero-label { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+.sunrise-count {
+  margin: 3px 0 15px; font-size: clamp(62px, 19vw, 92px); line-height: 1.06;
+  font-weight: 650; font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
+}
+.sunrise-count.after { color: var(--green); }
+.next-block {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center; gap: 16px; text-align: left;
+  padding: 12px 2px 0; border-top: 1px solid rgba(170,180,192,.22);
+}
+.sunrise-meta { min-width: 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: left; }
+.sunrise-meta .date { font-size: 13px; font-weight: 650; }
+.sunrise-meta .sunrise-line { line-height: 1.25; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sunrise-meta strong { color: var(--white); font-weight: 650; }
+.next-copy { min-width: 0; text-align: right; }
+.next-kicker { color: var(--muted); font-size: 9px; letter-spacing: .15em; font-weight: 750; margin-bottom: 2px; }
+.next-name { color: var(--orange); font-size: 18px; font-weight: 650; direction: rtl; text-align: right; line-height: 1.25; }
+.next-count { color: var(--muted); font-size: clamp(20px, 5.8vw, 26px); font-weight: 550; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.full-divider {
+  width: 100%; height: 3px;
+  flex-shrink: 0;
+  background: var(--divider);
+  opacity: .72;
+}
+.lower {
+  width: 100%;
+  background: var(--body-bg);
+  flex: 1 0 auto;
+  display: flex;
+}
+.content {
+  width: min(100%, 560px);
+  margin: 0 auto;
+}
+.hero .content {
+  padding: 20px 20px 18px;
+  text-align: center;
+}
+.lower .content {
+  min-height: 100%;
+  padding: 12px 12px 13px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+}
+.rows { display: flex; flex-direction: column; gap: 4px; }
+.milestone {
+  min-height: 47px; display: grid; grid-template-columns: minmax(92px, 1fr) minmax(0, 1.25fr);
+  align-items: center; gap: 12px; padding: 9px 12px; border-radius: 9px;
+  color: var(--white); border: 1px solid transparent;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.milestone .time { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .015em; white-space: nowrap; text-align: start; }
+.milestone .name { direction: rtl; text-align: right; font-size: 19px; font-weight: 600; line-height: 1.2; }
+.milestone.future { color: var(--white); }
+.milestone.imminent { /*color: var(--orange);*/ }
+.milestone.just-hit { color: var(--green); }
+.milestone.past { color: var(--dim); }
+.milestone.active { background: var(--panel); border-color: rgba(85,201,139,.22); }
+.milestone.active.just-hit .name { color: var(--green); }
+.footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 13px 3px 0; color: var(--dim); font-size: 10px;
+}
+.footer a { color: var(--muted); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.status {
+  margin-top: 12px; padding: 11px 13px; border: 1px solid #475564; border-radius: 9px;
+  background: #1b2835; color: var(--muted); font-size: 12px; line-height: 1.45;
+}
+.status.error { border-color: rgba(240,163,59,.45); color: #f3c17e; }
+.status[hidden] { display: none; }
+.location-panel, .test-panel {
+  margin-top: 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px;
+  background: rgba(32,45,58,.42); overflow: hidden;
+}
+.lower .location-panel {
+  margin-top: auto;
+}
+.location-toggle, .test-panel summary {
+  display: block; width: 100%; cursor: pointer; list-style: none; text-align: center;
+  border: 0; border-radius: 0; background: transparent; padding: 12px 14px; color: var(--muted);
+  position: relative;
+}
+.location-toggle:hover, .test-panel summary:hover { background: rgba(255,255,255,.035); }
+.location-toggle::after { content: "+"; color: var(--dim); font-size: 16px; line-height: 12px; position: absolute; top: calc(50% - 5px); right: 1em; }
+.location-panel.open .location-toggle::after { content: "−"; }
+.location-display { display: block; }
+.location-zone { display: block; color: var(--white); font-size: 13px; font-weight: 650; }
+.location-coords { color: var(--muted); font-size: 11px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.location-editor { display: none; padding: 0 14px 14px; }
+.location-panel.open .location-editor { display: block; }
+.settings-note { text-align: center; color: var(--dim); font-size: 11px; line-height: 1.4; margin: 0 0 11px; }
+.fields { display: flex; gap: 9px; justify-content: center; }
+.field label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+.field input, .test-time {
+  width: 100%; min-width: 0; padding: 10px; color: var(--white); background: #101720;
+  border: 1px solid #3a4856; border-radius: 7px; font: inherit; font-size: 14px;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center;}
+button.action {
+  border: 1px solid #465564; border-radius: 7px; padding: 9px 12px; background: #263544;
+  color: var(--white); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; 
+}
+button.action.primary { background: #315b4b; border-color: #477e66; }
+button.action:disabled { opacity: .5; cursor: wait; }
+.test-panel summary { text-align: left; font-size: 11px; font-weight: 650; }
+.test-panel summary::-webkit-details-marker { display: none; }
+.test-panel summary::after { content: "+"; float: right; font-size: 16px; line-height: 12px; }
+.test-panel[open] summary::after { content: "−"; }
+.test-body { padding: 0 12px 12px; }
+.test-note { color: var(--dim); font-size: 10px; line-height: 1.4; margin: 0 0 9px; }
+.test-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.test-actions button { padding: 7px 9px; font-size: 11px; }
+.test-status { color: var(--orange); font-size: 10px; margin-top: 8px; }
+@media (min-width: 700px) {
+  .hero { padding-top: max(7vh, 38px); }
+  .page { min-height: calc(100dvh - max(7vh, 38px)); }
+}
+@media (max-width: 380px) {
+  .hero .content { padding: 18px 13px 15px; }
+  .lower .content { padding-left: 11px; padding-right: 11px; }
+  .next-block { gap: 8px; }
+  .sunrise-meta { font-size: 11px; }
+  .sunrise-meta .date { font-size: 12px; }
+  .next-name { font-size: 17px; }
+  .milestone { grid-template-columns: minmax(86px, .9fr) minmax(0, 1.1fr); gap: 8px; padding: 9px; }
+  .milestone .time { font-size: 14px; }
+  .milestone .name { font-size: 18px; }
+}
+
+
+.milestone.active {
+    color: var(--orange);
+}
+
+.milestone.active.just-hit .time {
+    color: var(--green);
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="hero" aria-label="Sunrise countdown">
+    <div class="content">
+      <div class="sunrise-count" id="sunriseCountdown">--:--:--</div>
+      <div class="next-block">
+        <div class="sunrise-meta">
+          <div class="sunrise-line">Sunrise <strong id="sunriseTime">—</strong></div>
+          <div class="date" id="dateLabel">—</div>
+        </div>
+        <div class="next-copy">
+          <div class="next-name" id="nextName">—</div>
+          <div class="next-count" id="nextCountdown">--:--:--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider" aria-hidden="true"></div>
+
+  <section class="lower" aria-label="Tefillah milestones and location">
+    <div class="content">
+      <div class="rows" id="milestoneRows">
+        <div class="milestone"><span class="time">—</span><span class="name">טוען…</span></div>
+      </div>
+
+      <div class="footer">
+        <div>Current Time <span id="clockLabel">—</span></div>
+        <a href="https://www.hebcal.com/home/1663/zmanim-halachic-times-api" target="_blank" rel="noopener">Sun Data by Hebcal</a>
+      </div>
+
+      <details class="test-panel" id="testPanel" style="display: none">
+        <summary>Timeline test mode</summary>
+        <div class="test-body">
+          <p class="test-note">Set a simulated local time to preview the timeline without changing your device clock. Use Live to return to the real time.</p>
+          <input class="test-time" id="testTimeInput" type="datetime-local" step="1">
+          <div class="test-actions">
+            <button class="action" data-step="-1800" type="button">−30m</button>
+            <button class="action" data-step="-300" type="button">−5m</button>
+            <button class="action" data-step="-60" type="button">−1m</button>
+            <button class="action" data-step="60" type="button">+1m</button>
+            <button class="action" data-step="300" type="button">+5m</button>
+            <button class="action" data-step="1800" type="button">+30m</button>
+            <button class="action primary" id="applyTestTime" type="button">Set time</button>
+            <button class="action" id="liveTime" type="button">Live</button>
+          </div>
+          <div class="test-status" id="testStatus">Live time</div>
+        </div>
+      </details>
+
+      <div class="status" id="status" role="status" hidden></div>
+
+      <div class="location-panel" id="locationPanel">
+        <button class="location-toggle" id="locationToggle" type="button" aria-expanded="false">
+          <span class="location-display">
+            <span class="location-zone" id="locationZone">Location unavailable</span>
+            <span class="location-coords" id="locationCoords">—</span>
+          </span>
+        </button>
+        <div class="location-editor" id="locationEditor">
+          <p class="settings-note">Use your device location, or enter coordinates manually. Sunrise data is loaded once when the page opens.</p>
+          <div class="fields">
+            <div class="field"><label for="latitude">LATITUDE</label><input id="latitude" inputmode="decimal" placeholder="40.7128"></div>
+            <div class="field"><label for="longitude">LONGITUDE</label><input id="longitude" inputmode="decimal" placeholder="-74.0060"></div>
+            <button class="action" id="useLocation" type="button"><span class="material-symbols-outlined">my_location</span></button>
+          </div>
+          <div class="actions">
+            <button class="action primary" id="refreshLocation" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const SECTIONS = [
+    { name: "ברכות", offset: 35 * 60 },
+    { name: "פסוקי דזמרה", offset: 28 * 60 },
+    { name: "ישתבח", offset: 9 * 60 },
+    { name: "שמע", offset: 4 * 60 + 45 },
+    { name: "אמת", offset: 2 * 60 + 15 },
+    { name: "נץ", offset: 0 }
+  ];
+
+  const LOCATION_KEY = "tefillahTimeline.location.v1";
+  const SUNRISE_CACHE_KEY = "tefillahTimeline.sunrises.v2";
+  const POST_SUNRISE_COUNTUP_SECONDS = 5 * 60;
+  const COLOR_WINDOW_SECONDS = 30;
+  const TICK_MS = 500;
+
+  const el = id => document.getElementById(id);
+  let location = null;
+  let sunriseDays = new Map();
+  let tickHandle = null;
+  let apiRequestStarted = false;
+  let simulatedNow = null;
+  let lastRowSignature = "";
+  let lastNextEventKey = "";
+  let lastDisplayDayKey = "";
+
+  const pad = n => String(n).padStart(2, "0");
+  function formatDuration(totalSeconds) {
+    const safe = Math.max(0, Math.floor(totalSeconds));
+    return `${pad(Math.floor(safe / 3600))}:${pad(Math.floor((safe % 3600) / 60))}:${pad(safe % 60)}`;
+  }
+  function localDateKey(date, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+  function addCalendarDays(dateKey, amount) {
+    const [y, m, d] = dateKey.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d + amount));
+    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+  }
+  function formatClock(timestamp, timeZone, withSeconds = false) {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone, hour: "2-digit", minute: "2-digit", ...(withSeconds ? { second: "2-digit" } : {}), hourCycle: "h23"
+    }).format(new Date(timestamp));
+  }
+  function formatDate(timestamp, timeZone) {
+    return new Intl.DateTimeFormat(undefined, { timeZone, weekday: "long", month: "short", day: "numeric" }).format(new Date(timestamp));
+  }
+  function showStatus(message, isError = false) {
+    const node = el("status"); node.textContent = message; node.hidden = !message; node.classList.toggle("error", isError);
+  }
+  function normalizedLocationKey(loc) { return `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}`; }
+  function readSunriseCache() {
+    try {
+      const cached = JSON.parse(localStorage.getItem(SUNRISE_CACHE_KEY) || "null");
+      if (cached && cached.locationKey === normalizedLocationKey(location) && Array.isArray(cached.days))
+        return new Map(cached.days.map(day => [day.date, day]));
+    } catch {}
+    return new Map();
+  }
+  function writeSunriseCache(days) {
+    try { localStorage.setItem(SUNRISE_CACHE_KEY, JSON.stringify({ locationKey: normalizedLocationKey(location), days: [...days.values()].slice(-3) })); } catch {}
+  }
+  function degreeMinute(value, positive, negative) {
+    let degrees = Math.floor(Math.abs(value));
+    let minutes = Math.round((Math.abs(value) - degrees) * 60);
+    if (minutes === 60) { degrees += 1; minutes = 0; }
+    return `${degrees}°${pad(minutes)}′${value >= 0 ? positive : negative}`;
+  }
+  function coordinateDescription(loc) {
+    return `${degreeMinute(loc.lat, "N", "S")} ${degreeMinute(loc.lon, "E", "W")}`;
+  }
+  function displayTzid(tzid) { return (tzid || "Unknown time zone").replaceAll("_", " ").replaceAll("/", " / "); }
+  function coordinatesFromTitle(title, tzid) {
+    if (title && tzid) {
+      const index = title.lastIndexOf(tzid);
+      if (index >= 0) {
+        const prefix = title.slice(0, index).trim().replace(/[·,\-–—]+$/, "").trim();
+        if (prefix) return prefix;
+      }
+    }
+    return location ? coordinateDescription(location) : "Coordinates unavailable";
+  }
+  function updateLocationDisplay() {
+    if (!location) return;
+    const tzid = location.timeZone || location.tzid || "Unknown time zone";
+    el("locationZone").textContent = displayTzid(tzid);
+    el("locationCoords").textContent = coordinatesFromTitle(location.title, tzid);
+    el("latitude").value = location.lat;
+    el("longitude").value = location.lon;
+  }
+  function saveLocation() {
+    if (!location) return;
+    try { localStorage.setItem(LOCATION_KEY, JSON.stringify(location)); } catch {}
+  }
+  function loadSavedLocation() {
+    try {
+      const value = JSON.parse(localStorage.getItem(LOCATION_KEY) || "null");
+      if (value && Number.isFinite(value.lat) && Number.isFinite(value.lon)) return value;
+    } catch {}
+    return null;
+  }
+
+  async function loadSunrises() {
+    if (!location) throw new Error("Set a location to calculate sunrise.");
+    if (apiRequestStarted) throw new Error("Sunrise data has already been requested for this page. Reload to use a different location.");
+
+    const timeZone = location.timeZone || location.tzid || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayKey = localDateKey(new Date(), timeZone);
+    const tomorrowKey = addCalendarDays(todayKey, 1);
+    const cached = readSunriseCache();
+    const cachedToday = cached.get(todayKey), cachedTomorrow = cached.get(tomorrowKey);
+    if (cachedToday && cachedTomorrow && Number.isFinite(cachedToday.sunrise) && Number.isFinite(cachedTomorrow.sunrise)) {
+      sunriseDays = new Map([[todayKey, cachedToday], [tomorrowKey, cachedTomorrow]]);
+      location.timeZone = cachedToday.timeZone || timeZone;
+      updateLocationDisplay(); showStatus(""); return;
+    }
+
+    // One request per page load on a cache miss. Hebcal's batch response stores
+    // times.sunrise as an object keyed by YYYY-MM-DD (not an array of day objects).
+    apiRequestStarted = true;
+    const url = new URL("https://www.hebcal.com/zmanim");
+    url.search = new URLSearchParams({
+      cfg: "json", latitude: String(location.lat), longitude: String(location.lon), tzid: timeZone,
+      start: todayKey, end: tomorrowKey, sec: "1"
+    }).toString();
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error(`Hebcal returned HTTP ${response.status}.`);
+    const data = await response.json();
+    const apiLocation = data.location || {};
+    const apiTimeZone = apiLocation.tzid || timeZone;
+    const sunriseMap = data?.times?.sunrise;
+    if (!sunriseMap || typeof sunriseMap !== "object") throw new Error("Hebcal did not return sunrise times for the requested dates.");
+
+    const loadedDays = Object.entries(sunriseMap)
+      .filter(([date, value]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof value === "string")
+      .map(([date, value]) => ({ date, sunrise: Date.parse(value), timeZone: apiTimeZone }))
+      .filter(day => Number.isFinite(day.sunrise));
+    if (!loadedDays.length) throw new Error("No valid sunrise times were returned by Hebcal.");
+
+    sunriseDays = new Map(loadedDays.map(day => [day.date, day]));
+    location.timeZone = apiTimeZone;
+    location.tzid = apiTimeZone;
+    location.title = apiLocation.title || location.title || "";
+    location.placeName = apiLocation.name || location.placeName || "";
+    location.displayName = location.placeName || "Location identified by coordinates";
+    saveLocation(); writeSunriseCache(sunriseDays); updateLocationDisplay();
+    if (!sunriseDays.has(todayKey) || !sunriseDays.has(tomorrowKey)) {
+      showStatus("Hebcal did not return both requested dates. The timeline may be incomplete until the next page load.", true);
+    } else showStatus("");
+  }
+
+  function getEventsForDay(day) {
+    return SECTIONS.map((section, index) => ({ ...section, index, timestamp: day.sunrise - section.offset * 1000, sunrise: day.sunrise, date: day.date, timeZone: day.timeZone }));
+  }
+  function getState(now) {
+    const days = [...sunriseDays.values()].sort((a, b) => a.sunrise - b.sunrise);
+    const events = days.flatMap(getEventsForDay).sort((a, b) => a.timestamp - b.timestamp);
+    const todayKey = localDateKey(new Date(now), location.timeZone);
+    const today = days.find(day => day.date === todayKey) || days.find(day => day.sunrise > now) || days[0] || null;
+    const todaySunrise = today?.sunrise ?? null;
+
+    // Only a milestone between the first pre-sunrise point and sunrise is active.
+    // Once sunrise has occurred, clear the active row instead of leaving נץ lit all day.
+    let activeEvent = null;
+    if (todaySunrise !== null && now < todaySunrise + 30_000) {
+      for (const event of events) {
+        if (event.date !== today.date) continue;
+        if (event.timestamp <= now) activeEvent = event;
+        else break;
+      }
+    }
+    const nextEvent = events.find(event => event.timestamp > now) || null;
+
+    let sunriseMode = "countdown", sunriseValue = 0, sunriseTarget = todaySunrise;
+    if (todaySunrise !== null && now >= todaySunrise && now < todaySunrise + POST_SUNRISE_COUNTUP_SECONDS * 1000) {
+      sunriseMode = "countup"; sunriseValue = (now - todaySunrise) / 1000;
+    } else if (todaySunrise !== null && now >= todaySunrise + POST_SUNRISE_COUNTUP_SECONDS * 1000) {
+      const nextSunriseDay = days.find(day => day.sunrise > now);
+      sunriseTarget = nextSunriseDay?.sunrise ?? null;
+    }
+    const nextDay = nextEvent ? days.find(day => day.date === nextEvent.date) : null;
+    return { days, events, activeEvent, nextEvent, today, todaySunrise, nextDay, sunriseMode, sunriseValue, sunriseTarget };
+  }
+
+  function renderRows(state, now) {
+    const day = state.today;
+    if (!day) return;
+    const rowState = getEventsForDay(day).map(event => {
+      const delta = (event.timestamp - now) / 1000;
+      let status = "future";
+      if (delta > 0 && delta <= COLOR_WINDOW_SECONDS) status = "imminent";
+      else if (delta <= 0 && delta >= -COLOR_WINDOW_SECONDS) status = "just-hit";
+      else if (delta < -COLOR_WINDOW_SECONDS) status = "past";
+      const isActive = !!state.activeEvent && event.timestamp === state.activeEvent.timestamp;
+      return { event, status, isActive };
+    });
+    const signature = `${day.date}|` + rowState.map(x => `${x.status}:${x.isActive ? 1 : 0}`).join("|");
+    if (signature === lastRowSignature) return;
+    lastRowSignature = signature;
+    el("milestoneRows").innerHTML = rowState.map(({ event, status, isActive }) => {
+      const time = formatClock(event.timestamp, event.timeZone);
+      const classes = ["milestone", status, isActive ? "active" : ""].filter(Boolean).join(" ");
+      return `<div class="${classes}" data-index="${event.index}"><span class="time">${time}</span><span class="name" lang="he" dir="rtl">${event.name}</span></div>`;
+    }).join("");
+  }
+
+  function getNow() { return simulatedNow === null ? Date.now() : simulatedNow; }
+  function renderTick() {
+    if (!sunriseDays.size) return;
+    const now = getNow();
+    const state = getState(now);
+    const { nextEvent, nextDay, sunriseMode, sunriseValue, sunriseTarget } = state;
+
+    // These are the only three values refreshed on the 500ms tick.
+    if (sunriseMode === "countup") {
+      el("sunriseCountdown").textContent = "+" + formatDuration(sunriseValue);
+      el("sunriseCountdown").classList.add("after");
+    } else {
+      el("sunriseCountdown").textContent = sunriseTarget ? formatDuration((sunriseTarget - now) / 1000) : "--:--:--";
+      el("sunriseCountdown").classList.remove("after");
+    }
+    el("nextCountdown").textContent = nextEvent ? formatDuration((nextEvent.timestamp - now) / 1000) : "--:--:--";
+    const clockZone = (nextDay || state.today)?.timeZone || location.timeZone;
+    el("clockLabel").textContent = new Intl.DateTimeFormat(undefined, {
+      timeZone: clockZone, hour: "numeric", minute: "2-digit", second: "2-digit"
+    }).format(new Date(now));
+
+    // Static labels are only changed when the next milestone/day changes.
+    const nextKey = nextEvent ? `${nextEvent.date}:${nextEvent.index}` : "none";
+    if (nextKey !== lastNextEventKey) {
+      lastNextEventKey = nextKey;
+      el("nextName").textContent = nextEvent ? nextEvent.name : "—";
+    }
+    const displayDay = nextDay || state.today;
+    if (displayDay && displayDay.date !== lastDisplayDayKey) {
+      lastDisplayDayKey = displayDay.date;
+      el("sunriseTime").textContent = formatClock(displayDay.sunrise, displayDay.timeZone, true);
+      el("dateLabel").textContent = formatDate(displayDay.sunrise, displayDay.timeZone);
+    }
+    renderRows(state, now);
+  }
+
+  function zonedDateTimeToTimestamp(value, timeZone) {
+    const [datePart, timePart] = value.split("T");
+    if (!datePart || !timePart) return NaN;
+    const [y, m, d] = datePart.split("-").map(Number);
+    const [hh, mm, ss = "0"] = timePart.split(":");
+    const targetUtc = Date.UTC(y, m - 1, d, Number(hh), Number(mm), Number(ss));
+    let guess = targetUtc;
+    for (let i = 0; i < 3; i++) {
+      const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(guess));
+      const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+      const represented = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second));
+      guess += targetUtc - represented;
+    }
+    return guess;
+  }
+  function timestampToInputValue(timestamp, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(timestamp));
+    const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
+  }
+  function setTestTime(timestamp) {
+    if (!Number.isFinite(timestamp)) return;
+    simulatedNow = timestamp;
+    el("testTimeInput").value = timestampToInputValue(timestamp, location.timeZone);
+    el("testStatus").textContent = `Simulated: ${new Intl.DateTimeFormat(undefined, { timeZone: location.timeZone, dateStyle: "medium", timeStyle: "medium" }).format(new Date(timestamp))}`;
+    lastRowSignature = ""; lastNextEventKey = ""; lastDisplayDayKey = "";
+    renderTick();
+  }
+  function useLiveTime() {
+    simulatedNow = null; lastRowSignature = "";
+    el("testTimeInput").value = timestampToInputValue(Date.now(), location.timeZone);
+    el("testStatus").textContent = "Live time";
+    lastRowSignature = ""; lastNextEventKey = ""; lastDisplayDayKey = "";
+    renderTick();
+  }
+
+  async function setCoordinates(lat, lon, source = "manual") {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180)
+      throw new Error("Enter a valid latitude (−90 to 90) and longitude (−180 to 180).");
+    const previous = loadSavedLocation();
+    const sameSavedArea = previous && Math.abs(previous.lat - lat) < 0.5 && Math.abs(previous.lon - lon) < 0.5;
+    location = { lat, lon, source, timeZone: sameSavedArea ? (previous.timeZone || previous.tzid) : Intl.DateTimeFormat().resolvedOptions().timeZone };
+    saveLocation();
+    // Location changes take effect on a fresh page load, which gets exactly one new API call.
+    window.location.reload();
+  }
+  function requestDeviceLocation() {
+    if (!navigator.geolocation) { showStatus("This browser does not provide location access. Enter coordinates manually.", true); return; }
+    el("useLocation").disabled = true;
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude, lon = position.coords.longitude;
+      setCoordinates(lat, lon, "device").catch(error => showStatus(error.message, true));
+    }, error => {
+      const messages = {
+        1: "Location permission was denied. Enter coordinates manually, or allow location access in your browser settings.",
+        2: "Your location could not be determined. Try again or enter coordinates manually.",
+        3: "The location request timed out. Try again or enter coordinates manually."
+      };
+      showStatus(messages[error.code] || "Unable to get your location.", true); el("useLocation").disabled = false;
+    }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 6 * 60 * 60 * 1000 });
+  }
+
+  function startClock() {
+    if (tickHandle) clearInterval(tickHandle);
+    renderTick();
+    tickHandle = setInterval(renderTick, TICK_MS);
+  }
+  el("locationToggle").addEventListener("click", () => {
+    const panel = el("locationPanel");
+    const open = panel.classList.toggle("open");
+    el("locationToggle").setAttribute("aria-expanded", String(open));
+  });
+  el("refreshLocation").addEventListener("click", () => {
+    const lat = Number(el("latitude").value.trim()), lon = Number(el("longitude").value.trim());
+    el("refreshLocation").disabled = true;
+    setCoordinates(lat, lon, "manual").catch(error => {
+      showStatus(error.message, true); el("refreshLocation").disabled = false;
+    });
+  });
+  el("useLocation").addEventListener("click", requestDeviceLocation);
+  el("applyTestTime").addEventListener("click", () => {
+    const value = el("testTimeInput").value;
+    const timestamp = zonedDateTimeToTimestamp(value, location.timeZone);
+    if (!Number.isFinite(timestamp)) { el("testStatus").textContent = "Enter a valid date and time."; return; }
+    setTestTime(timestamp);
+  });
+  el("testTimeInput").addEventListener("change", () => {
+    const timestamp = zonedDateTimeToTimestamp(el("testTimeInput").value, location.timeZone);
+    if (Number.isFinite(timestamp)) setTestTime(timestamp);
+  });
+  document.querySelectorAll("[data-step]").forEach(button => button.addEventListener("click", () => {
+    const base = simulatedNow === null ? Date.now() : simulatedNow;
+    setTestTime(base + Number(button.dataset.step) * 1000);
+  }));
+  el("liveTime").addEventListener("click", useLiveTime);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) renderTick(); });
+  window.addEventListener("focus", renderTick);
+  window.addEventListener("pageshow", renderTick);
+
+  async function init() {
+    location = loadSavedLocation();
+    if (location) {
+      updateLocationDisplay();
+      try {
+        await loadSunrises();
+        el("testTimeInput").value = timestampToInputValue(Date.now(), location.timeZone);
+      } catch (error) {
+        showStatus(`${error.message} Open the location panel to correct the coordinates, then refresh.`, true);
+        el("locationPanel").classList.add("open"); el("locationToggle").setAttribute("aria-expanded", "true");
+      }
+    } else {
+      showStatus("Set your location below to calculate sunrise.");
+      el("locationPanel").classList.add("open"); el("locationToggle").setAttribute("aria-expanded", "true");
+      el("testPanel").open = false;
+      requestDeviceLocation();
+    }
+    if (sunriseDays.size) startClock();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
