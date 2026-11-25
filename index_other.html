@@ -1,0 +1,2730 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siddur</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;600&family=Material+Symbols+Outlined" rel="stylesheet">
+
+<style>
+
+/* ---------------------------------
+   1. COLORS AND GLOBAL SETTINGS
+--------------------------------- */
+
+:root {
+    --background: #f3f0e9;
+    --surface: #fbfaf6;
+    --surface-hover: #eae6dc;
+
+    --text: #292c29;
+    --muted: #77796f;
+
+    --border: #dcd7ca;
+    --accent: #657b70;
+    --accent-light: #e4e9e2;
+
+    --shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+
+    --drawer-width: 340px;
+}
+
+[data-theme="dark"] {
+    --background: #202522;
+    --surface: #2a302c;
+    --surface-hover: #39413b;
+
+    --text: #e9e8df;
+    --muted: #a6aca3;
+
+    --border: #424b44;
+    --accent: #a3bca9;
+    --accent-light: #35443a;
+
+    --shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    background: var(--background);
+    color: var(--text);
+
+    font-family: "DM Sans", sans-serif;
+
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
+
+button,
+select,
+input {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-size: 25px;
+    font-weight: normal;
+    line-height: 1;
+}
+
+
+/* ---------------------------------
+   2. FLOATING DRAWER BUTTONS
+--------------------------------- */
+
+.floating-button {    
+    background: none;
+    border: none;
+
+    /*position: fixed;
+    top: 20px;
+
+    z-index: 8;
+
+    width: 48px;
+    height: 48px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--border);
+    border-radius: 50%;
+
+    background: var(--surface);
+    box-shadow: var(--shadow);
+
+    opacity: 0;
+    transition: opacity 3s;*/
+
+    /* Deliberately do NOT disable pointer events. */
+}
+
+#open-left {
+    left: 20px;
+}
+
+#open-right {
+    right: 20px;
+}
+
+.floating-button.visible {
+    /*opacity: 1;*/
+}
+
+/* On narrow screens, use gestures instead. */
+@media (max-width: 700px) {
+    .floating-button {
+        /*opacity: 0;*/
+    }
+}
+
+
+/* ---------------------------------
+   3. MAIN PRAYER CONTENT
+--------------------------------- */
+
+main {
+    width: min(100%, 820px);
+
+    margin: 0 auto;
+    /*padding: 65px 30px 100px;*/
+}
+
+.page-category {
+    color: var(--accent);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+
+    margin-bottom: 12px;
+}
+
+.page-title {
+    font-family: "Frank Ruhl Libre", serif;
+
+    font-size: 46px;
+    font-weight: 500;
+
+    margin: 0 0 8px;
+}
+
+.page-subtitle {
+    color: var(--muted);
+    font-size: 13px;
+
+    margin-bottom: 38px;
+}
+
+.prayer-card {
+    padding: 45px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+}
+
+.prayer-section {
+    margin-bottom: 28px;
+}
+
+.prayer-section:last-child {
+    margin-bottom: 0;
+}
+
+.hebrew {
+    font-family: "Frank Ruhl Libre", serif;
+
+    font-size: 32px;
+    line-height: 2;
+
+    direction: rtl;
+    text-align: right;
+
+    margin: 0 0 12px;
+}
+
+.placeholder {
+    color: var(--muted);
+
+    font-size: 14px;
+    line-height: 1.9;
+
+    margin: 0;
+}
+
+.section-divider {
+    width: 45px;
+    height: 2px;
+
+    background: var(--accent);
+
+    margin: 35px 0;
+}
+
+@media (max-width: 600px) {
+    main {
+        /*padding: 40px 17px 70px;*/
+    }
+
+    .page-title {
+        font-size: 38px;
+    }
+
+    .prayer-card {
+        padding: 25px 19px;
+    }
+
+    .hebrew {
+        font-size: 27px;
+    }
+}
+
+
+/* ---------------------------------
+   4. DRAWER BACKDROP
+--------------------------------- */
+
+#backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 10;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition: opacity 0.25s;
+}
+
+#backdrop.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* ---------------------------------
+   5. DRAWERS
+--------------------------------- */
+
+.drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+
+    z-index: 11;
+
+    width: min(var(--drawer-width), 80vw);
+
+    display: flex;
+    flex-direction: column;
+
+    background: var(--surface);
+    box-shadow: var(--shadow);
+
+    transition: transform 0.28s ease;
+}
+
+.drawer-left {
+    left: 0;
+    transform: translateX(-105%);
+}
+
+/* Put the left drawer's scrollbar on its left edge */
+.drawer-left .drawer-content {
+    direction: rtl;
+}
+
+.drawer-left .drawer-content > * {
+    direction: ltr;
+}
+
+.drawer-right {
+    right: 0;
+    transform: translateX(105%);
+}
+
+.drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 17px 22px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.drawer-title {
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 25px;
+}
+
+.close-button {
+    width: 42px;
+    height: 42px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: transparent;
+}
+
+.close-button:hover {
+    background: var(--surface-hover);
+}
+
+.drawer-content {
+    flex: 1;
+    overflow-y: auto;
+
+    padding: 20px;
+}
+
+
+/* ---------------------------------
+   6. LEFT DRAWER HERO
+--------------------------------- */
+
+.time-hero {
+    padding: 25px 20px 27px;
+
+    margin-bottom: 28px;
+
+    border-radius: 15px;
+
+    background: var(--accent-light);
+    color: var(--text);
+}
+
+.hero-label {
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.hero-time {
+    font-size: 39px;
+    font-weight: 600;
+
+    margin: 8px 0 17px;
+}
+
+.hero-divider {
+    height: 1px;
+    background: var(--border);
+
+    margin-bottom: 15px;
+}
+
+.hero-next {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hero-hebrew-date {
+    color: var(--muted);
+    font-size: 12px;
+
+    margin-top: 9px;
+}
+
+
+/* ---------------------------------
+   7. NAVIGATION LIST
+--------------------------------- */
+
+.nav-group {
+    margin-bottom: 27px;
+}
+
+.nav-heading {
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+
+    margin: 0 0 9px 10px;
+}
+
+.nav-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 13px 12px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: transparent;
+
+    text-align: left;
+    font-size: 14px;
+}
+
+.nav-item:hover {
+    background: var(--surface-hover);
+}
+
+.nav-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.nav-item .material-symbols-outlined {
+    font-size: 20px;
+    color: var(--muted);
+}
+
+
+/* ---------------------------------
+   8. LEFT DRAWER BOTTOM BUTTONS
+--------------------------------- */
+
+.drawer-bottom {
+    display: flex;
+    gap: 1em;
+
+    padding: 15px 18px;
+
+    border-top: 1px solid var(--border);
+}
+
+.secondary-button, .settings-button {
+    padding: 12px 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    background: transparent;
+
+    font-size: 12px;
+}
+
+.secondary-button:hover {
+    background: var(--surface-hover);
+}
+
+
+/* ---------------------------------
+   9. RIGHT DRAWER OPTIONS
+--------------------------------- */
+
+.option-section {
+    padding-bottom: 22px;
+    margin-bottom: 22px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.option-heading {
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+
+    margin-bottom: 10px;
+}
+
+.option-section h3 {
+    font-size: 14px;
+    margin: 0 0 5px;
+}
+
+.option-description {
+    color: var(--muted);
+
+    font-size: 11px;
+    line-height: 1.6;
+
+    margin: 0 0 12px;
+}
+
+.option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 11px 0;
+
+    font-size: 13px;
+}
+
+.option-row + .option-row {
+    border-top: 1px solid var(--border);
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+
+    accent-color: var(--accent);
+}
+
+select {
+    max-width: 155px;
+
+    padding: 8px 10px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--surface);
+}
+
+
+/* ---------------------------------
+   10. FONT SIZE SLIDER
+--------------------------------- */
+
+.font-slider {
+    width: 100%;
+    accent-color: var(--accent);
+    margin: 12px 0;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+
+    color: var(--muted);
+    font-size: 10px;
+}
+
+
+/* ---------------------------------
+   11. SETTINGS OVERLAY
+--------------------------------- */
+
+#settings-screen {
+    position: fixed;
+    inset: 0;
+
+    z-index: 20;
+
+    transform: translateY(-105%);
+    transition: transform 0.48s ease;
+
+    background: var(--background);
+}
+
+#settings-screen.open {
+    transform: translateX(0);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 15px 22px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-content {
+    width: min(650px, 90%);
+    margin: 45px auto;
+
+    overflow-y: auto;
+}
+
+.settings-content h1 {
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 42px;
+    font-weight: 500;
+}
+
+.settings-card {
+    padding: 20px;
+    margin-bottom: 15px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.settings-card h3 {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+.settings-card p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+
+/* ---------------------------------
+   12. SMALL NOTIFICATION
+--------------------------------- */
+
+#toast {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+
+    z-index: 30;
+
+    transform: translate(-50%, 15px);
+    opacity: 0;
+
+    padding: 12px 20px;
+
+    border-radius: 30px;
+
+    background: var(--text);
+    color: var(--background);
+
+    font-size: 12px;
+
+    pointer-events: none;
+    transition: 0.2s;
+}
+
+#toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+</style>
+
+
+<style>
+button {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+button:focus,
+button:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+
+:root {
+    /* Backgrounds */
+    --bg-main: #f5f3ed;
+    --bg-card: #fffefa;
+    --bg-secondary: #eeece5;
+
+    /* Text */
+    --text-primary: #333b35;
+    --text-secondary: #737a72;
+
+    /* Accent */
+    --accent: #879b83;
+    --accent-dark: #647c60;
+
+    /* Borders */
+    --border: #deded5;
+
+    /* Miscellaneous */
+    --shadow: rgba(40, 45, 40, 0.10);
+}
+
+
+/* ---------------------------------
+   DARK THEME
+--------------------------------- */
+
+[data-theme="dark"] {
+    /* Backgrounds */
+    --bg-main: #202520;
+    --bg-card: #292f29;
+    --bg-secondary: #343b34;
+
+    /* Text */
+    --text-primary: #e7e9e1;
+    --text-secondary: #a9b0a5;
+
+    /* Accent */
+    --accent: #9aaf94;
+    --accent-dark: #b2c5aa;
+
+    /* Borders */
+    --border: #414a40;
+
+    /* Miscellaneous */
+    --shadow: rgba(0, 0, 0, 0.25);
+}
+
+/* ---------------------------------
+   PRAYER HEADER
+--------------------------------- */
+
+.prayer-header {
+    /*position: sticky;
+    top: 0;*/
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 22px 24px;
+
+    background: var(--bg-main);
+    color: var(--text-secondary);
+
+    border-bottom: 3px solid var(--accent);
+
+    transition:
+        padding 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.prayer-header.compact {
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.prayer-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.prayer-header-category {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-bottom: 3px;
+}
+
+.prayer-header-title {
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
+
+    transition: font-size 0.25s ease;
+}
+
+.prayer-header.compact .prayer-header-title {
+    font-size: 1.2rem;
+}
+
+.prayer-header-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin-top: 3px;
+
+    transition: opacity 0.2s ease;
+}
+
+.prayer-header.compact .prayer-header-subtitle,
+.prayer-header.compact .prayer-header-category {
+    display: none;
+}
+
+
+/* ---------------------------------
+   JUMP MENU
+--------------------------------- */
+
+.prayer-jump {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.prayer-jump-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+    color: inherit;
+
+    cursor: pointer;
+}
+
+.prayer-jump-button:hover {
+    background: rgba(128, 128, 128, 0.18);
+}
+
+.prayer-jump-button .material-symbols-outlined {
+    font-size: 28px;
+}
+
+.prayer-jump-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    inset-inline-end: 0;
+
+    width: max-content;
+    min-width: 190px;
+    max-width: min(280px, 80vw);
+
+    padding: 6px;
+
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+
+    display: none;
+}
+
+.prayer-jump-menu.open {
+    display: block;
+}
+
+.prayer-jump-item {
+    display: block;
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+    color: inherit;
+
+    text-align: start;
+    font: inherit;
+
+    cursor: pointer;
+}
+
+.prayer-jump-item:hover {
+    background: var(--bg-secondary);
+}
+
+
+/* ---------------------------------
+   PRAYER CARDS
+--------------------------------- */
+
+.prayer-card {
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    padding: 28px 24px;
+
+    border-radius: 0 0 16px 16px;
+}
+
+.prayer-card[hidden] {
+    display: none !important;
+}
+
+
+/* ---------------------------------
+   JUMP TARGETS
+--------------------------------- */
+
+.prayer-card .jump-target {
+    scroll-margin-top: 100px;
+}
+
+.prayer-card .jump-target + .jump-target {
+    margin-top: 32px;
+}
+
+
+/* ---------------------------------
+   MOBILE
+--------------------------------- */
+
+@media (max-width: 700px) {
+
+    .prayer-header {
+        padding: 17px 16px;
+    }
+
+    .prayer-header-title {
+        font-size: 1.4rem;
+    }
+
+    .prayer-card {
+        padding: 22px 16px;
+    }
+
+}
+
+
+</style>
+</head>
+
+<body>
+
+<!-- FLOATING BUTTONS -->
+
+
+
+
+<!-- MAIN PRAYER -->
+
+<main>
+
+  <!--  PRAYER HEADER ----- -->
+  <div class="prayer-header" id="prayer-header">
+
+      
+      <button class="prayer-jump-button" id="open-left"
+        aria-label="Open navigation"
+        onclick="openDrawer('left')">
+    <span class="material-symbols-outlined">menu</span>
+</button>
+
+
+      <div class="prayer-header-info">
+          <div class="prayer-header-title" id="prayer-title">
+              Me’in Ha’shalosh
+          </div>
+      </div>
+
+      <!-- JUMP MENU -->
+      <div class="prayer-jump">
+          <button
+              class="prayer-jump-button"
+              id="prayer-jump-button"
+              aria-label="Jump to section"
+              aria-expanded="false"
+              onclick="togglePrayerJumpMenu()">
+
+              <span class="material-symbols-outlined">
+                  keyboard_arrow_down
+              </span>
+          </button>
+          <div class="prayer-jump-menu" id="prayer-jump-menu">
+              <!-- Populated automatically -->
+          </div>
+      </div>
+
+<button class="prayer-jump-button" id="open-right"
+        aria-label="Open options"
+        onclick="openDrawer('right')">
+    <span class="material-symbols-outlined">list</span>
+</button>
+
+  </div>
+
+
+<!-- ---------------------------------
+     ME'IN HA'SHALOSH
+--------------------------------- -->
+
+<article
+    class="prayer-card"
+    id="main-shalosh"
+    data-prayer="Me’in Ha’shalosh">
+
+    <div class="jump-target" data-label="Opening blessing">
+
+        <h3>Opening blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="On the produce">
+
+        <h3>On the produce</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="On Shabbat and holidays">
+
+        <h3>On Shabbat and holidays</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="Closing blessing">
+
+        <h3>Closing blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+</article>
+
+
+<!-- ---------------------------------
+     BIRCHAS HA'MAZON
+--------------------------------- -->
+
+<article
+    class="prayer-card"
+    id="birchas-hamazon"
+    data-prayer="Birchas Ha’mazon"
+    hidden>
+
+    <div class="jump-target" data-label="First blessing">
+
+        <h3>First blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="Second blessing">
+
+        <h3>Second blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="Third blessing">
+
+        <h3>Third blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+
+    <div class="jump-target" data-label="Fourth blessing">
+
+        <h3>Fourth blessing</h3>
+
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        </p>
+
+    </div>
+
+</article>
+
+</main>
+
+
+<!-- DRAWER BACKDROP -->
+
+<div id="backdrop" onclick="closeDrawers()"></div>
+
+
+<!-- LEFT DRAWER -->
+
+<aside class="drawer drawer-left" id="left-drawer">
+
+    <div class="drawer-header">
+       <div>       
+        <div class="hero-time" id="hero-time">5:25 PM</div>
+        <div class="hero-label">Next zman</div>
+        <div class="hero-next" id="hero-next"> Location not configured </div>
+        <div class="hero-hebrew-date" id="hebrew-date">Hebrew date unavailable</div>
+       </div>
+    </div>
+
+
+    <div class="drawer-content">
+        <!-- PRAYERS -->
+
+        <div class="nav-group">
+
+            <div class="nav-heading">Prayers</div>
+
+            <button class="nav-item" onclick="selectPage(this, 'Shacharis', 'Prayers', 'Morning prayer')">
+                Shacharis
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            <button class="nav-item" onclick="selectPage(this, 'Mincha', 'Prayers', 'Afternoon prayer')">
+                Mincha
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            <button class="nav-item" onclick="selectPage(this, 'Maariv', 'Prayers', 'Evening prayer')">
+                Maariv
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+        </div>
+
+
+        <!-- FOOD BLESSINGS -->
+
+        <div class="nav-group">
+
+            <div class="nav-heading">Food blessings</div>
+
+            <button class="nav-item"
+                    onclick="selectPage(this, 'Birchas Ha’mazon', 'Food blessings', 'Grace after meals')">
+                Birchas Ha’mazon
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            <button class="nav-item active"
+                    onclick="selectPage(this, 'Me’in Ha’shalosh', 'Food blessings', 'The three-faceted blessing')">
+                Me’in Ha’shalosh
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+        </div>
+
+
+        <!-- OCCASIONAL PRAYERS -->
+
+        <div class="nav-group">
+
+            <div class="nav-heading">Occasional prayers</div>
+
+            <button class="nav-item"
+                    onclick="selectPage(this, 'Tefilas Ha’derech', 'Occasional prayers', 'Prayer for the journey')">
+                Tefilas Ha’derech
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            <button class="nav-item"
+                    onclick="selectPage(this, 'Kiddush Levanah', 'Occasional prayers', 'Sanctification of the new moon')">
+                Kiddush Levanah
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- PINNED BOTTOM BUTTONS -->
+
+    <div class="drawer-bottom">
+
+        <button class="secondary-button"
+                onclick="showToast('Save preferences — coming later')">
+            Save preferences
+        </button>
+
+        <button class="secondary-button"
+                onclick="showToast('Load preferences — coming later')">
+            Load preferences
+        </button>
+
+        <button class="settings-button"
+                onclick="openSettings()">
+            <span class="material-symbols-outlined">settings</span>
+        </button>
+
+    </div>
+
+</aside>
+
+
+<!-- RIGHT DRAWER -->
+
+<aside class="drawer drawer-right" id="right-drawer">
+
+    <div class="drawer-header">
+        <span class="drawer-title">Options</span>
+
+        <!--<button class="close-button" onclick="closeDrawers()">
+            <span class="material-symbols-outlined">close</span>
+        </button>-->
+    </div>
+
+
+    <div class="drawer-content">
+
+
+        <!-- FREQUENT PAGE OPTIONS -->
+
+        <section class="option-section">
+
+            <div class="option-heading">This page · often used</div>
+
+            <h3>Which blessings?</h3>
+
+            <p class="option-description">
+                Choose the parts that apply to this meal.
+            </p>
+
+            <label class="option-row">
+                Grain products
+                <input type="checkbox" checked>
+            </label>
+
+            <label class="option-row">
+                Wine / grape juice
+                <input type="checkbox">
+            </label>
+
+            <label class="option-row">
+                Seven species fruit
+                <input type="checkbox">
+            </label>
+
+        </section>
+
+
+        <!-- PAGE OPTIONS -->
+
+        <section class="option-section">
+
+            <div class="option-heading">This page · wording</div>
+
+            <h3>Text & tradition</h3>
+
+            <label class="option-row">
+                Nusach
+
+                <select>
+                    <option>Ashkenaz</option>
+                    <option>Sefard</option>
+                    <option>Edot HaMizrach</option>
+                </select>
+            </label>
+
+            <label class="option-row">
+                Where was it grown?
+
+                <select>
+                    <option>Choose origin</option>
+                    <option>Israel</option>
+                    <option>Outside Israel</option>
+                </select>
+            </label>
+
+        </section>
+
+
+        <!-- LESS FREQUENT OPTIONS -->
+
+        <section class="option-section">
+
+            <div class="option-heading">This page · occasional</div>
+
+            <h3>Additional words</h3>
+
+            <p class="option-description">
+                Include optional words and phrases.
+            </p>
+
+            <label class="option-row">
+                Optional “na”
+                <input type="checkbox" checked>
+            </label>
+
+            <label class="option-row">
+                Additional conjunctions
+                <input type="checkbox" checked>
+            </label>
+
+        </section>
+
+
+        <!-- AUTOMATIC CALENDAR OPTIONS -->
+
+        <section class="option-section">
+
+            <div class="option-heading">Calendar · automatic</div>
+
+            <h3>Holiday passage</h3>
+
+            <p class="option-description">
+                Automatically determined from the calendar.
+                Manual override can be added here.
+            </p>
+
+            <label class="option-row">
+                Holiday
+
+                <select>
+                    <option>Automatic</option>
+                    <option>None</option>
+                    <option>Shabbat</option>
+                    <option>Rosh Chodesh</option>
+                    <option>Yom Tov</option>
+                </select>
+            </label>
+
+        </section>
+
+
+        <!-- WHOLE APP OPTIONS -->
+
+        <section class="option-section">
+
+            <div class="option-heading">Whole app</div>
+
+            <h3>Font size</h3>
+
+            <input
+                class="font-slider"
+                type="range"
+                min="24"
+                max="48"
+                value="32"
+                oninput="changeFontSize(this.value)"
+            >
+
+            <div class="slider-labels">
+                <span>Small</span>
+                <span>Large</span>
+            </div>
+
+
+            <label class="option-row">
+                Dark mode
+
+                <input
+                    type="checkbox"
+                    onchange="toggleDarkMode(this.checked)"
+                >
+            </label>
+
+        </section>
+
+    </div>
+
+</aside>
+
+
+<!-- SETTINGS SCREEN -->
+
+<section id="settings-screen">
+
+    <div class="settings-header">
+
+        <span class="drawer-title">Settings</span>
+
+        <button class="close-button" onclick="closeSettings()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+
+    </div>
+
+
+    <div class="settings-content">
+
+        <h1>Settings</h1>
+
+        <p>
+            Personalize the way your siddur looks and behaves.
+        </p>
+
+
+        <div class="settings-card">
+            <h3>Location & zmanim</h3>
+
+            <p>
+                Set a location to calculate local prayer times
+                and upcoming zmanim. Location settings will
+                be available here.
+            </p>
+        </div>
+
+
+        <div class="settings-card">
+            <h3>Calendar</h3>
+
+            <p>
+                Hebrew calendar, Israel / diaspora calendar
+                conventions, and automatic prayer additions.
+            </p>
+        </div>
+
+
+        <div class="settings-card">
+            <h3>About</h3>
+
+            <p>
+                A quiet, adaptable place for daily prayer.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<div id="toast"></div>
+
+
+<script>
+
+/* ---------------------------------
+   1. CLOCK
+--------------------------------- */
+
+function updateClock() {
+
+    const now = new Date();
+
+    document.getElementById("hero-time").textContent =
+        now.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit"
+        });
+
+}
+
+updateClock();
+
+setInterval(updateClock, 30000);
+
+
+/* ---------------------------------
+   2. FLOATING BUTTONS
+--------------------------------- */
+
+// Show the buttons on initial page load.
+
+/*document.querySelectorAll(".floating-button").forEach(button => {
+    button.classList.add("visible");
+});*/
+
+// Fade them after five seconds.
+// Opacity changes only; they remain clickable.
+
+/*setTimeout(() => {
+
+    document.querySelectorAll(".floating-button").forEach(button => {
+        button.classList.remove("visible");
+    });
+
+}, 100);*/
+
+
+/* ---------------------------------
+   3. DRAWER CONTROLS
+--------------------------------- */
+
+const leftDrawer = document.getElementById("left-drawer");
+const rightDrawer = document.getElementById("right-drawer");
+const backdrop = document.getElementById("backdrop");
+
+let activeDrawer = null;
+
+
+function openDrawer(side) {
+
+    closeSettings();
+
+    activeDrawer = side;
+
+    if (side === "left") {
+        leftDrawer.classList.add("open");
+    }
+
+    if (side === "right") {
+        rightDrawer.classList.add("open");
+    }
+
+    backdrop.classList.add("open");
+
+    document.body.style.overflow = "hidden";
+
+}
+
+
+function closeDrawers() {
+
+    leftDrawer.classList.remove("open");
+    rightDrawer.classList.remove("open");
+
+    backdrop.classList.remove("open");
+
+    activeDrawer = null;
+
+    document.body.style.overflow = "";
+
+}
+
+
+/* ---------------------------------
+   4. SWIPE GESTURES
+--------------------------------- */
+
+let touchStart = null;
+
+document.addEventListener("touchstart", event => {
+
+    if (event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+
+    touchStart = {
+        x: touch.clientX,
+        y: touch.clientY
+    };
+
+}, { passive: true });
+
+
+document.addEventListener("touchend", event => {
+
+    if (!touchStart) return;
+
+    const touch = event.changedTouches[0];
+
+    const dx = touch.clientX - touchStart.x;
+    const dy = touch.clientY - touchStart.y;
+
+    const isHorizontalSwipe =
+        Math.abs(dx) > 65 &&
+        Math.abs(dx) > Math.abs(dy) * 1.3;
+
+    if (isHorizontalSwipe) {
+
+        if (!activeDrawer) {
+
+            if (dx > 0) {
+                openDrawer("left");
+            } else {
+                openDrawer("right");
+            }
+
+        } else {
+
+            if (
+                (activeDrawer === "left" && dx < 0) ||
+                (activeDrawer === "right" && dx > 0)
+            ) {
+                closeDrawers();
+            }
+
+        }
+
+    }
+
+    touchStart = null;
+
+}, { passive: true });
+
+
+
+/* ---------------------------------
+   5. PRAYER DISPLAY & NAVIGATION
+--------------------------------- */
+
+// ---------------------------------
+// SWITCH PRAYERS
+// ---------------------------------
+
+function selectPage(button, title, category, subtitle) {
+
+    const prayerCards = document.querySelectorAll(".prayer-card");
+
+    // Hide every prayer card first.
+
+    prayerCards.forEach(card => {
+        card.hidden = true;
+    });
+
+
+    // Find the card associated with this navigation item.
+
+    const selectedCard = Array.from(prayerCards).find(card => {
+
+        return card.dataset.prayer === title;
+
+    });
+
+
+    if (!selectedCard) {
+
+        console.error(
+            "No prayer card found for:",
+            title
+        );
+
+        return;
+
+    }
+
+
+    // Display the selected prayer.
+
+    selectedCard.hidden = false;
+
+
+    // Update the header.
+
+    //document.getElementById("prayer-category").textContent = category;
+
+    document.getElementById("prayer-title").textContent =
+        title;
+
+    //document.getElementById("prayer-subtitle").textContent = subtitle;
+
+
+    // Update navigation highlighting.
+
+    document.querySelectorAll(".nav-item").forEach(item => {
+
+        item.classList.remove("active");
+
+    });
+
+    if (button) {
+        button.classList.add("active");
+    }
+
+
+    // Rebuild the jump menu for this prayer.
+
+    buildPrayerJumpMenu(selectedCard);
+
+
+    // Start the new prayer at its beginning.
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+    
+    
+    closeDrawers();
+}
+
+
+// ---------------------------------
+// BUILD JUMP MENU
+// ---------------------------------
+
+function buildPrayerJumpMenu(card) {
+
+    const menu = document.getElementById("prayer-jump-menu");
+
+    menu.innerHTML = "";
+
+    const targets = card.querySelectorAll(".jump-target");
+
+    targets.forEach((target, index) => {
+
+        const label =
+            target.dataset.label ||
+            target.querySelector("h1, h2, h3, h4")?.textContent ||
+            `Section ${index + 1}`;
+
+
+        const button = document.createElement("button");
+
+        button.className = "prayer-jump-item";
+        button.textContent = label;
+
+        button.onclick = () => {
+
+            target.scrollIntoView({
+
+                behavior: "smooth",
+                block: "start"
+
+            });
+
+            closePrayerJumpMenu();
+
+        };
+
+        menu.appendChild(button);
+
+    });
+
+
+    // Hide the jump button if there are no targets.
+
+    document.getElementById("prayer-jump-button").hidden =
+        targets.length === 0;
+
+}
+
+
+// ---------------------------------
+// OPEN / CLOSE JUMP MENU
+// ---------------------------------
+
+function togglePrayerJumpMenu() {
+
+    const menu = document.getElementById("prayer-jump-menu");
+
+    const button = document.getElementById("prayer-jump-button");
+
+    const isOpen = menu.classList.toggle("open");
+
+    button.setAttribute("aria-expanded", isOpen);
+
+}
+
+
+function closePrayerJumpMenu() {
+
+    const menu = document.getElementById("prayer-jump-menu");
+
+    const button = document.getElementById("prayer-jump-button");
+
+    menu.classList.remove("open");
+
+    button.setAttribute("aria-expanded", "false");
+
+}
+
+
+// Close menu when clicking elsewhere.
+
+document.addEventListener("click", event => {
+
+    const jump = document.querySelector(".prayer-jump");
+
+    if (jump && !jump.contains(event.target)) {
+
+        closePrayerJumpMenu();
+
+    }
+
+});
+
+
+
+/* ---------------------------------
+   COMPACT HEADER ON SCROLL
+--------------------------------- */
+
+let lastPrayerScrollY = window.scrollY;
+let prayerScrollDirection = null;
+
+let prayerScrollLocked = false;
+
+window.addEventListener("scroll", () => {
+
+    const currentY = window.scrollY;
+
+    const header = document.getElementById("prayer-header");
+
+    if (!header) return;
+
+    // Always expand near the top.
+
+    if (currentY < 40) {
+
+        header.classList.remove("compact");
+
+        lastPrayerScrollY = currentY;
+
+        prayerScrollDirection = null;
+
+        return;
+
+    }
+
+    // Ignore scroll events caused by the header's own animation.
+
+    if (prayerScrollLocked) {
+        return;
+    }
+
+    const difference = currentY - lastPrayerScrollY;
+
+    if (Math.abs(difference) < 8) {
+        return;
+    }
+
+    const direction = difference > 0 ? "down" : "up";
+
+    if (direction !== prayerScrollDirection) {
+
+        prayerScrollDirection = direction;
+
+        if (direction === "down") {
+
+            header.classList.add("compact");
+
+        } else {
+
+            header.classList.remove("compact");
+
+        }
+
+        // Briefly ignore events generated by the resize.
+
+        prayerScrollLocked = true;
+
+        setTimeout(() => {
+
+            prayerScrollLocked = false;
+
+            lastPrayerScrollY = window.scrollY;
+
+        }, 300);
+
+    }
+
+    lastPrayerScrollY = currentY;
+
+}, { passive: true });
+
+
+
+// ---------------------------------
+// INITIALIZE
+// ---------------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const initialCard = document.querySelector(
+        ".prayer-card:not([hidden])"
+    );
+
+    if (initialCard) {
+
+        buildPrayerJumpMenu(initialCard);
+
+    }
+
+});
+
+
+
+/* ---------------------------------
+   6. SETTINGS SCREEN
+--------------------------------- */
+
+function openSettings() {
+
+    closeDrawers();
+
+    document.getElementById("settings-screen")
+        .classList.add("open");
+
+    document.body.style.overflow = "hidden";
+
+}
+
+
+function closeSettings() {
+
+    document.getElementById("settings-screen")
+        .classList.remove("open");
+
+    document.body.style.overflow = "";
+
+}
+
+
+/* ---------------------------------
+   7. FONT SIZE
+--------------------------------- */
+
+function changeFontSize(size) {
+
+    document.querySelectorAll(".hebrew").forEach(paragraph => {
+
+        paragraph.style.fontSize = size + "px";
+
+    });
+
+}
+
+
+/* ---------------------------------
+   8. DARK MODE
+--------------------------------- */
+
+function toggleDarkMode(enabled) {
+
+    if (enabled) {
+        document.documentElement.dataset.theme = "dark";
+    } else {
+        document.documentElement.dataset.theme = "light";
+    }
+
+}
+
+
+
+/* ---------------------------------
+   9. HEBCAL — CALENDAR, LOCATION & ZMANIM
+--------------------------------- */
+
+// ---------------------------------
+// CONFIGURATION
+// ---------------------------------
+
+const SIDDUR_LOCATION_KEY = "siddur-location";
+const SIDDUR_CACHE_PREFIX = "siddur-v3-";
+
+const SIDDUR_CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+
+// These are the zmanim currently considered for the
+// "Next zman" display. Change this list as needed.
+
+const SIDDUR_ZMANIM = {
+    alotHaShachar: "Alos HaShachar",
+    misheyakir: "Misheyakir",
+    sunrise: "Netz HaChamah",
+    sofZmanShma: "Sof Zman Krias Shema",
+    sofZmanTfilla: "Sof Zman Tefilah",
+    chatzot: "Chatzos",
+    minchaGedola: "Mincha Gedolah",
+    minchaKetana: "Mincha Ketanah",
+    plagHaMincha: "Plag HaMincha",
+    sunset: "Shkiah",
+    tzeit7083deg: "Tzeis HaKochavim"
+};
+
+
+// ---------------------------------
+// SHARED LOCATION
+// ---------------------------------
+
+// This is intentionally global so other parts of the
+// application can access or change the location.
+
+window.siddurLocation = null;
+
+
+function saveSiddurLocation(location) {
+
+    window.siddurLocation = location;
+
+    localStorage.setItem(
+        SIDDUR_LOCATION_KEY,
+        JSON.stringify(location)
+    );
+
+}
+
+
+function getSavedSiddurLocation() {
+
+    try {
+
+        const saved = localStorage.getItem(SIDDUR_LOCATION_KEY);
+
+        return saved ? JSON.parse(saved) : null;
+
+    } catch (error) {
+
+        console.error("Unable to read saved location:", error);
+
+        return null;
+
+    }
+
+}
+
+
+// ---------------------------------
+// BROWSER GEOLOCATION
+// ---------------------------------
+
+function getBrowserLocation() {
+
+    return new Promise((resolve, reject) => {
+
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported."));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            position => {
+
+                resolve({
+
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+
+                    // The browser supplies the timezone.
+                    tzid: Intl.DateTimeFormat()
+                        .resolvedOptions().timeZone
+
+                });
+
+            },
+
+            error => reject(error),
+
+            {
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 60 * 60 * 1000
+            }
+
+        );
+
+    });
+
+}
+
+
+// Call this whenever you want to update the location
+// using the browser's current position.
+
+window.refreshSiddurLocation = async function () {
+
+    try {
+
+        const location = await getBrowserLocation();
+
+        saveSiddurLocation(location);
+
+        await loadSiddurData(true);
+
+        return location;
+
+    } catch (error) {
+
+        console.error("Unable to obtain location:", error);
+
+        document.getElementById("hero-next").textContent =
+            "Location unavailable";
+
+        throw error;
+
+    }
+
+};
+
+
+// Manually change the location.
+// Example:
+// setSiddurLocation(40.7128, -74.0060, "America/New_York");
+
+window.setSiddurLocation = async function (
+    latitude,
+    longitude,
+    tzid = Intl.DateTimeFormat().resolvedOptions().timeZone
+) {
+
+    const location = {
+        latitude,
+        longitude,
+        tzid
+    };
+
+    saveSiddurLocation(location);
+
+    await loadSiddurData(true);
+
+};
+
+
+// ---------------------------------
+// DATE HELPERS
+// ---------------------------------
+
+function getLocalDate(location, offsetDays = 0) {
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+
+        timeZone: location.tzid,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+
+    }).formatToParts(new Date());
+
+    const values = {};
+
+    parts.forEach(part => {
+        values[part.type] = part.value;
+    });
+
+    const date = new Date(Date.UTC(
+        Number(values.year),
+        Number(values.month) - 1,
+        Number(values.day) + offsetDays
+    ));
+
+    return [
+        date.getUTCFullYear(),
+        String(date.getUTCMonth() + 1).padStart(2, "0"),
+        String(date.getUTCDate()).padStart(2, "0")
+    ].join("-");
+
+}
+
+
+// ---------------------------------
+// API CACHE
+// ---------------------------------
+
+async function fetchSiddurData(url, cacheKey, force = false) {
+
+    if (!force) {
+
+        try {
+
+            const cached = localStorage.getItem(cacheKey);
+
+            if (cached) {
+
+                const entry = JSON.parse(cached);
+
+                const stillValid =
+                    Date.now() - entry.timestamp < SIDDUR_CACHE_DURATION;
+
+                if (stillValid) {
+                    return entry.data;
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn("Cache read failed:", error);
+
+        }
+
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Hebcal request failed: " + response.status
+        );
+
+    }
+
+    const data = await response.json();
+
+    try {
+
+        localStorage.setItem(cacheKey, JSON.stringify({
+
+            timestamp: Date.now(),
+            data
+
+        }));
+
+    } catch (error) {
+
+        console.warn("Unable to save cache:", error);
+
+    }
+
+    return data;
+
+}
+
+
+// ---------------------------------
+// BUILD API URLS
+// ---------------------------------
+
+
+function buildHebcalURL(start, end) {
+
+    const url = new URL("https://www.hebcal.com/hebcal");
+
+    const params = {
+
+        v: "1",
+        cfg: "json",
+
+        start,
+        end,
+
+        maj: "on",
+        min: "on",
+        mod: "on",
+        nx: "on",
+        mf: "on",
+        ss: "on",
+
+        // Include Hebrew dates for every day.
+        d: "on",
+
+        i: "off"
+
+    };
+
+    Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+    });
+
+    return url.toString();
+
+}
+
+
+
+function buildZmanimURL(location, start, end) {
+
+    const url = new URL("https://www.hebcal.com/zmanim");
+
+    const params = {
+
+        cfg: "json",
+
+        latitude: location.latitude,
+        longitude: location.longitude,
+        tzid: location.tzid,
+
+        start,
+        end
+
+    };
+
+    Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+    });
+
+    return url.toString();
+
+}
+
+
+// ---------------------------------
+// LOAD BOTH API RESPONSES
+// ---------------------------------
+
+let siddurActiveDateRange = null;
+let siddurLoadingPromise = null;
+
+async function loadSiddurData(force = false) {
+
+    // Avoid simultaneous duplicate requests.
+
+    if (siddurLoadingPromise && !force) {
+        return siddurLoadingPromise;
+    }
+
+    siddurLoadingPromise = (async () => {
+
+        const location = window.siddurLocation;
+
+        if (!location) {
+
+            document.getElementById("hero-next").textContent =
+                "Location not configured";
+
+            return;
+
+        }
+
+        const today = getLocalDate(location);
+        const tomorrow = getLocalDate(location, 1);
+
+        const rangeKey = `${today}-${tomorrow}`;
+
+        siddurActiveDateRange = rangeKey;
+
+        const calendarURL = buildHebcalURL(today, tomorrow);
+
+        const zmanimURL = buildZmanimURL(
+            location,
+            today,
+            tomorrow
+        );
+
+        const locationKey = [
+            location.latitude,
+            location.longitude,
+            location.tzid
+        ].join("-");
+
+        const calendarCacheKey =
+            SIDDUR_CACHE_PREFIX + "calendar-" + rangeKey;
+
+        const zmanimCacheKey =
+            SIDDUR_CACHE_PREFIX +
+            "zmanim-" + locationKey + "-" + rangeKey;
+
+
+        // Two independent requests, in parallel.
+
+        const results = await Promise.allSettled([
+
+            fetchSiddurData(
+                calendarURL,
+                calendarCacheKey,
+                force
+            ),
+
+            fetchSiddurData(
+                zmanimURL,
+                zmanimCacheKey,
+                force
+            )
+
+        ]);
+
+
+        // Calendar result
+
+        if (results[0].status === "fulfilled") {
+
+            displayHebcal(
+                results[0].value,
+                today
+            );
+
+        } else {
+
+            console.error(
+                "Unable to load Hebrew calendar:",
+                results[0].reason
+            );
+
+            document.getElementById("hebrew-date").textContent =
+                "Calendar unavailable";
+
+        }
+
+
+        // Zmanim result
+
+        if (results[1].status === "fulfilled") {
+
+            window.siddurZmanim = results[1].value;
+
+            updateNextZman();
+
+        } else {
+
+            console.error(
+                "Unable to load zmanim:",
+                results[1].reason
+            );
+
+            document.getElementById("hero-next").textContent =
+                "Zmanim unavailable";
+
+        }
+
+    })();
+
+    try {
+
+        await siddurLoadingPromise;
+
+    } finally {
+
+        siddurLoadingPromise = null;
+
+    }
+
+}
+
+
+// ---------------------------------
+// DISPLAY HEBREW DATE
+// ---------------------------------
+
+
+function displayHebcal(data, today) {
+
+    const items = data.items || [];
+
+    const hebrewDate = items.find(item =>
+        item.category === "hebdate" &&
+        item.date.startsWith(today)
+    );
+
+    if (hebrewDate) {
+
+        document.getElementById("hebrew-date").textContent =
+            hebrewDate.hebrew || hebrewDate.title;
+
+    } else {
+
+        console.error(
+            "Hebrew date missing from Hebcal response:",
+            items
+        );
+
+        document.getElementById("hebrew-date").textContent =
+            "Hebrew date unavailable";
+
+    }
+
+    const events = items.filter(item =>
+        item.category === "holiday" ||
+        item.category === "roshchodesh" ||
+        item.category === "omer"
+    );
+
+    if (events.length) {
+        console.log("Hebcal events:", events);
+    }
+
+}
+
+
+
+// ---------------------------------
+// FIND NEXT ZMAN
+// ---------------------------------
+
+function updateNextZman() {
+
+    const data = window.siddurZmanim;
+
+    if (!data || !data.times) {
+        return;
+    }
+
+    const location = window.siddurLocation;
+
+    const now = Date.now();
+
+    const upcoming = [];
+
+    const today = getLocalDate(location);
+    const tomorrow = getLocalDate(location, 1);
+
+    Object.entries(SIDDUR_ZMANIM).forEach(([key, label]) => {
+
+        const timeData = data.times[key];
+
+        if (!timeData) {
+            return;
+        }
+
+        [today, tomorrow].forEach(date => {
+
+            // Batch API responses return a date-indexed object.
+            // Handle a single-date response too, just in case.
+
+            const isoTime = typeof timeData === "string"
+                ? timeData
+                : timeData[date];
+
+            if (!isoTime) {
+                return;
+            }
+
+            const timestamp = new Date(isoTime).getTime();
+
+            if (!Number.isFinite(timestamp) || timestamp <= now) {
+                return;
+            }
+
+            upcoming.push({
+
+                label,
+                timestamp
+
+            });
+
+        });
+
+    });
+
+
+    upcoming.sort((a, b) => a.timestamp - b.timestamp);
+
+    const next = upcoming[0];
+
+    if (!next) {
+
+        document.getElementById("hero-next").textContent =
+            "No upcoming zman found";
+
+        return;
+
+    }
+
+    const formattedTime = new Intl.DateTimeFormat("en-US", {
+
+        timeZone: location.tzid,
+        hour: "numeric",
+        minute: "2-digit"
+
+    }).format(new Date(next.timestamp));
+
+    document.getElementById("hero-next").textContent =
+        `${next.label} · ${formattedTime}`;
+
+}
+
+
+// ---------------------------------
+// UPDATE CLOCK
+// ---------------------------------
+
+function updateSiddurClock() {
+
+    const location = window.siddurLocation;
+
+    const timeElement = document.getElementById("hero-time");
+
+    if (!timeElement) {
+        return;
+    }
+
+    timeElement.textContent = new Intl.DateTimeFormat("en-US", {
+
+        timeZone: location?.tzid ||
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+        hour: "numeric",
+        minute: "2-digit"
+
+    }).format(new Date());
+
+}
+
+
+// ---------------------------------
+// AUTOMATIC UPDATES
+// ---------------------------------
+
+let siddurLastDateCheck = null;
+
+async function checkSiddurDate() {
+
+    const location = window.siddurLocation;
+
+    if (!location) {
+        return;
+    }
+
+    const today = getLocalDate(location);
+    const tomorrow = getLocalDate(location, 1);
+
+    const currentRange = `${today}-${tomorrow}`;
+
+    // If midnight has passed in the location's timezone,
+    // today's previous tomorrow becomes today's date.
+    // Fetch a new range.
+
+    if (currentRange !== siddurActiveDateRange) {
+
+        await loadSiddurData();
+
+    }
+
+    siddurLastDateCheck = currentRange;
+
+    updateSiddurClock();
+    updateNextZman();
+
+}
+
+
+// ---------------------------------
+// INITIALIZATION
+// ---------------------------------
+
+async function initializeSiddurHebcal() {
+
+    updateSiddurClock();
+
+    let location = getSavedSiddurLocation();
+
+    if (!location) {
+
+        try {
+
+            location = await getBrowserLocation();
+
+            saveSiddurLocation(location);
+
+        } catch (error) {
+
+            console.error("Location permission required:", error);
+
+            document.getElementById("hero-next").textContent =
+                "Location permission required";
+
+            return;
+
+        }
+
+    } else {
+
+        window.siddurLocation = location;
+
+    }
+
+    await loadSiddurData();
+
+    // Keep the clock and next-zman display current.
+    // Also detect midnight without requiring a page refresh.
+
+    setInterval(checkSiddurDate, 15000);
+
+}
+
+
+// Start the app.
+
+initializeSiddurHebcal();
+
+
+
+/* ---------------------------------
+   10. TOAST MESSAGE
+--------------------------------- */
+
+let toastTimer;
+
+function showToast(message) {
+
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2200);
+
+}
+
+
+/* ---------------------------------
+   11. ESCAPE KEY
+--------------------------------- */
+
+document.addEventListener("keydown", event => {
+
+    if (event.key === "Escape") {
+        closeDrawers();
+        closeSettings();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
