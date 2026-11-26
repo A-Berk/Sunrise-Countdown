@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Siddur — Reading Prototype</title>
+<style>
+  /* Theme tokens: add new themes here without changing component styles. */
+  :root {
+    color-scheme: dark;
+    --page: #151719;
+    --surface: #1d2023;
+    --surface-raised: #25292d;
+    --text: #e9e7e1;
+    --muted: #a5a49e;
+    --subtle: #777a7c;
+    --accent: #c5a878;
+    --accent-soft: rgba(197,168,120,.14);
+    --line: rgba(235,231,220,.12);
+    --overlay: rgba(0,0,0,.58);
+    --shadow: 0 18px 60px rgba(0,0,0,.38);
+    --reading-width: 48rem;
+    --text-scale: 1;
+    --reading-leading: 1.85;
+    --drawer-width: min( min(88vw, 23rem), 23rem);
+    --motion: 240ms;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+    --page: #f7f5f0; --surface: #fffefa; --surface-raised: #f0ede6;
+    --text: #292923; --muted: #68675f; --subtle: #8a887e;
+    --accent: #8a6b3f; --accent-soft: rgba(138,107,63,.12);
+    --line: rgba(40,38,30,.13); --overlay: rgba(20,18,12,.42);
+    --shadow: 0 18px 60px rgba(20,18,12,.2);
+  }
+  [data-theme="contrast-light"] {
+    color-scheme: light;
+    --page: #fff; --surface: #fff; --surface-raised: #f2f2f2;
+    --text: #000; --muted: #242424; --subtle: #444;
+    --accent: #003b9b; --accent-soft: #e5edff;
+    --line: #555; --overlay: rgba(0,0,0,.65);
+    --shadow: 0 18px 60px rgba(0,0,0,.35);
+  }
+  [data-theme="contrast-dark"] {
+    color-scheme: dark;
+    --page: #000; --surface: #080808; --surface-raised: #171717;
+    --text: #fff; --muted: #eee; --subtle: #ccc;
+    --accent: #ffe36e; --accent-soft: #292300;
+    --line: #aaa; --overlay: rgba(0,0,0,.78);
+    --shadow: 0 18px 60px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+  html { height: 100%; background: var(--page); }
+  body {
+    touch-action: pan-y pinch-zoom;
+    min-height: 100%; margin: 0; background: var(--page); color: var(--text);
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-size: calc(16px * var(--text-scale));
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+  button, input, select { font: inherit; }
+  button { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  ::selection { background: var(--accent-soft); }
+
+  /* The reading surface is the application. There is deliberately no header. */
+  .app { min-height: 100svh; }
+  .reading {
+    width: min(100%, var(--reading-width));
+    margin: 0 auto;
+    padding: clamp(1.2rem, 4vw, 3rem) clamp(1.1rem, 5vw, 2.6rem) 8rem;
+  }
+  .page-kicker {
+    margin: 0 0 .55rem; color: var(--muted); font: 600 .72rem/1.4 system-ui, sans-serif;
+    letter-spacing: .13em; text-transform: uppercase;
+  }
+  .page-title {
+    margin: 0 0 .8rem; font-size: clamp(1.8rem, 5vw, 2.45rem);
+    font-weight: 500; line-height: 1.2; letter-spacing: -.025em;
+  }
+  .page-intro { margin: 0 0 2.5rem; color: var(--muted); line-height: 1.7; }
+  .prayer-section { padding: 1.3rem 0 1.8rem; border-top: 1px solid var(--line); scroll-margin-top: 1.2rem; }
+  .section-heading {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    margin: 0 0 .85rem;
+  }
+  .section-heading h2 { margin: 0; font-size: 1.35rem; font-weight: 500; line-height: 1.35; }
+  .section-open {
+    display: grid; place-items: center; flex: 0 0 2.55rem; width: 2.55rem; height: 2.55rem;
+    border: 1px solid var(--line); border-radius: 50%; background: transparent;
+    color: var(--muted); cursor: pointer; transition: background var(--motion), color var(--motion), border-color var(--motion);
+  }
+  .section-open:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .section-open svg { width: 1.1rem; height: 1.1rem; }
+  .reading p { margin: .65rem 0; line-height: var(--reading-leading); }
+  .reading p.hebrew { direction: rtl; text-align: right; font-size: 1.18em; line-height: 2; }
+  .reading p.translation { color: var(--muted); font-family: system-ui, sans-serif; font-size: .91em; line-height: 1.8; }
+  .subheading { margin: 1.5rem 0 .4rem; color: var(--accent); font-size: 1.04rem; font-weight: 600; }
+  .end-note { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--subtle); font: .75rem/1.6 system-ui, sans-serif; text-align: center; }
+
+  /* Small unobtrusive edge grip: no top-level menu button or header. */
+  .edge-grip {
+    position: fixed; z-index: 5; left: 0; top: 50%; transform: translateY(-50%);
+    width: 9px; height: 76px; border: 0; border-radius: 0 8px 8px 0;
+    background: var(--muted); opacity: .28; cursor: pointer; padding: 0;
+  }
+  .edge-grip:hover { opacity: .65; }
+
+  .scrim {
+    position: fixed; inset: 0; z-index: 20; background: var(--overlay);
+    opacity: 0; visibility: hidden; transition: opacity var(--motion) ease, visibility var(--motion);
+    touch-action: pan-y;
+  }
+  .scrim.open { opacity: 1; visibility: visible; }
+  .drawer {
+    touch-action: pan-y pinch-zoom;
+    position: fixed; z-index: 21; top: 0; bottom: 0; width: var(--drawer-width);
+    display: flex; flex-direction: column; background: var(--surface);
+    box-shadow: var(--shadow); will-change: transform;
+    transition: transform var(--motion) cubic-bezier(.2,.75,.25,1);
+    overflow: hidden; overscroll-behavior: contain;
+  }
+  .drawer.left { left: 0; transform: translateX(-105%); border-right: 1px solid var(--line); }
+  .drawer.right { right: 0; transform: translateX(105%); border-left: 1px solid var(--line); }
+  .drawer.open { transform: translateX(0); }
+  .drawer.dragging { transition: none !important; }
+  .drawer-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    min-height: 4.2rem; padding: 1rem 1.15rem; border-bottom: 1px solid var(--line);
+    font: 600 .85rem/1.3 system-ui, sans-serif; letter-spacing: .04em;
+  }
+  .drawer-head small { display: block; margin-top: .2rem; color: var(--muted); font-size: .72rem; font-weight: 400; letter-spacing: 0; }
+  .icon-button {
+    display: grid; place-items: center; width: 2.4rem; height: 2.4rem; flex: 0 0 2.4rem;
+    border: 1px solid var(--line); border-radius: 50%; background: transparent; cursor: pointer;
+  }
+  .icon-button:hover { background: var(--accent-soft); }
+  .drawer-body { padding: .8rem; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+  .drawer-label { margin: 1rem .65rem .45rem; color: var(--subtle); font: 600 .67rem/1.4 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .drawer-link {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: .8rem;
+    padding: .85rem .75rem; border: 0; border-radius: .65rem; background: transparent;
+    color: var(--text); text-align: left; cursor: pointer; line-height: 1.4;
+  }
+  .drawer-link:hover, .drawer-link.active { background: var(--accent-soft); }
+  .drawer-link.active { color: var(--accent); }
+  .drawer-link .hint { color: var(--muted); font: .72rem system-ui, sans-serif; }
+  .setting { padding: .9rem .65rem; border-bottom: 1px solid var(--line); }
+  .setting-title { display: block; margin-bottom: .65rem; font: 600 .86rem system-ui, sans-serif; }
+  .setting-help { display: block; margin-top: .4rem; color: var(--muted); font: .75rem/1.5 system-ui, sans-serif; }
+  .setting input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .theme-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .theme-choice {
+    min-height: 2.65rem; border: 1px solid var(--line); border-radius: .55rem;
+    background: var(--surface-raised); cursor: pointer; font: .78rem system-ui, sans-serif;
+  }
+  .theme-choice[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .drawer-footer { padding: .85rem 1.1rem; border-top: 1px solid var(--line); color: var(--subtle); font: .7rem/1.5 system-ui, sans-serif; }
+
+  @media (min-width: 760px) {
+    .reading { padding-top: 3.5rem; }
+    .edge-grip { width: 7px; height: 92px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <main class="reading" id="reading">
+    <p class="page-kicker">A quiet place for daily prayer</p>
+    <h1 class="page-title">Me’in Ha’shalosh</h1>
+    <p class="page-intro">A sample reading surface. The text below is placeholder content for testing typography, scrolling, navigation, and drawer behavior.</p>
+
+    <section class="prayer-section" id="opening-blessing" data-title="Opening blessing">
+      <div class="section-heading"><h2>Opening blessing</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, עַל הַמִּחְיָה וְעַל הַכַּלְכָּלָה.</p>
+      <p class="translation">Blessed are You, Lord our God, King of the universe, for the sustenance and nourishment.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae justo sed neque facilisis elementum. Praesent at lectus vitae erat consequat aliquet. Donec euismod, nisl eget consectetur sagittis, nisl nunc consequat justo, vitae tincidunt lorem neque a erat.</p>
+    </section>
+
+    <section class="prayer-section" id="on-produce" data-title="On the produce">
+      <div class="section-heading"><h2>On the produce</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">וְעַל הַפֵּרוֹת וְעַל הַגֶּפֶן וְעַל פְּרִי הָעֵץ.</p>
+      <p class="translation">And for the fruits, the vine, and the fruit of the tree.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.</p>
+    </section>
+
+    <section class="prayer-section" id="shabbat-holidays" data-title="On Shabbat and holidays">
+      <div class="section-heading"><h2>On Shabbat and holidays</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">וְזָכְרֵנוּ לְטוֹבָה בְּיוֹם הַשַּׁבָּת הַזֶּה וּבְיוֹם חַג הַמַּצּוֹת הַזֶּה.</p>
+      <p class="translation">Remember us for good on this Shabbat and on this festival day.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.</p>
+      <p>Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus.</p>
+    </section>
+
+    <section class="prayer-section" id="first-blessing" data-title="First blessing">
+      <div class="section-heading"><h2>First blessing</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">רַחֵם נָא יְיָ אֱלֹהֵינוּ עַל יִשְׂרָאֵל עַמֶּךָ וְעַל יְרוּשָׁלַיִם עִירֶךָ.</p>
+      <p class="translation">Have mercy, Lord our God, upon Israel Your people and upon Jerusalem Your city.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris.</p>
+      <p>Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.</p>
+      <p>Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis.</p>
+    </section>
+
+    <section class="prayer-section" id="second-blessing" data-title="Second blessing">
+      <div class="section-heading"><h2>Second blessing</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">וּבְנֵה יְרוּשָׁלַיִם עִיר הַקֹּדֶשׁ בִּמְהֵרָה בְיָמֵינוּ.</p>
+      <p class="translation">Rebuild Jerusalem, the holy city, speedily in our days.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. Nullam quis risus eget urna mollis ornare vel eu leo.</p>
+      <p>Vestibulum id ligula porta felis euismod semper. Donec ullamcorper nulla non metus auctor fringilla. Maecenas faucibus mollis interdum. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum.</p>
+    </section>
+
+    <section class="prayer-section" id="third-blessing" data-title="Third blessing">
+      <div class="section-heading"><h2>Third blessing</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">בָּרוּךְ אַתָּה יְיָ עַל הָאָרֶץ וְעַל הַמָּזוֹן.</p>
+      <p class="translation">Blessed are You, Lord, for the land and for the nourishment.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec id elit non mi porta gravida at eget metus. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum. Cras mattis consectetur purus sit amet fermentum.</p>
+      <p>Nullam id dolor id nibh ultricies vehicula ut id elit. Donec sed odio dui. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum.</p>
+      <p>Etiam porta sem malesuada magna mollis euismod. Donec ullamcorper nulla non metus auctor fringilla. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.</p>
+    </section>
+
+    <section class="prayer-section" id="closing-blessing" data-title="Closing blessing">
+      <div class="section-heading"><h2>Closing blessing</h2><button class="section-open" aria-label="Open navigation for this page" title="Jump to a section"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="hebrew">בָּרוּךְ אַתָּה יְיָ, עַל הָאָרֶץ וְעַל הַמִּחְיָה.</p>
+      <p class="translation">Blessed are You, Lord, for the land and for sustenance.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum.</p>
+      <p>Maecenas sed diam eget risus varius blandit sit amet non magna. Donec id elit non mi porta gravida at eget metus. Praesent commodo cursus magna, vel scelerisque nisl consectetur et.</p>
+    </section>
+    <p class="end-note">END OF SAMPLE TEXT · Siddur reading prototype</p>
+  </main>
+</div>
+
+<button class="edge-grip" id="leftGrip" aria-label="Open app navigation" title="Open app navigation"></button>
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer left" id="leftDrawer" aria-label="App navigation" aria-hidden="true">
+  <div class="drawer-head"><div>APP NAVIGATION<small>Choose a prayer collection</small></div><button class="icon-button" data-close aria-label="Close drawer">✕</button></div>
+  <div class="drawer-body">
+    <p class="drawer-label">Siddur</p>
+    <button class="drawer-link active" data-page="prayers">Prayers <span class="hint">Current</span></button>
+    <button class="drawer-link" data-page="food">Food blessings <span class="hint">Demo</span></button>
+    <button class="drawer-link" data-page="occasional">Occasional prayers <span class="hint">Demo</span></button>
+    <p class="drawer-label">Application</p>
+    <button class="drawer-link" id="openAppearance">Appearance & accessibility <span class="hint">›</span></button>
+    <button class="drawer-link" id="openAbout">About <span class="hint">›</span></button>
+  </div>
+  <div class="drawer-footer">Navigation drawer · consistent across the app</div>
+</aside>
+
+<aside class="drawer right" id="rightDrawer" aria-label="Contextual panel" aria-hidden="true">
+  <div class="drawer-head"><div id="rightTitle">ON THIS PAGE<small id="rightSubtitle">Jump to a section</small></div><button class="icon-button" data-close aria-label="Close drawer">✕</button></div>
+  <div class="drawer-body" id="rightBody"></div>
+  <div class="drawer-footer" id="rightFooter">Swipe right or tap outside to close</div>
+</aside>
+
+<script>
+(() => {
+  const root = document.body;
+  const scrim = document.getElementById('scrim');
+  const left = document.getElementById('leftDrawer');
+  const right = document.getElementById('rightDrawer');
+  const rightTitle = document.getElementById('rightTitle');
+  const rightSubtitle = document.getElementById('rightSubtitle');
+  const rightBody = document.getElementById('rightBody');
+  const rightFooter = document.getElementById('rightFooter');
+  const reading = document.getElementById('reading');
+  const drawers = { left, right };
+  let activeDrawer = null;
+  let gesture = null;
+
+  const sections = [...document.querySelectorAll('.prayer-section')];
+  const themes = ['dark', 'light', 'contrast-light', 'contrast-dark'];
+  const savedTheme = localStorage.getItem('siddur-theme');
+  const savedScale = Number(localStorage.getItem('siddur-text-scale'));
+  root.dataset.theme = themes.includes(savedTheme) ? savedTheme : 'dark';
+  root.style.setProperty('--text-scale', savedScale >= .85 && savedScale <= 1.5 ? savedScale : 1);
+
+  function setScrollLock(locked) {
+    document.documentElement.style.overflow = locked ? 'hidden' : '';
+    document.body.style.overflow = locked ? 'hidden' : '';
+  }
+  function openDrawer(which) {
+    if (!drawers[which]) return;
+    if (activeDrawer && activeDrawer !== which) closeDrawer(false);
+    activeDrawer = which;
+    scrim.classList.add('open');
+    drawers[which].classList.add('open');
+    drawers[which].setAttribute('aria-hidden', 'false');
+    setScrollLock(true);
+  }
+  function closeDrawer(restoreFocus = true) {
+    if (!activeDrawer) return;
+    const old = activeDrawer;
+    drawers[old].classList.remove('open', 'dragging');
+    drawers[old].style.transform = '';
+    drawers[old].setAttribute('aria-hidden', 'true');
+    scrim.classList.remove('open');
+    activeDrawer = null;
+    setScrollLock(false);
+    if (restoreFocus) {
+      const focusTarget = old === 'left' ? document.getElementById('leftGrip') : document.querySelector('.section-open');
+      focusTarget?.focus({preventScroll:true});
+    }
+  }
+  document.getElementById('leftGrip').addEventListener('click', () => {
+    activeDrawer === 'left' ? closeDrawer() : openDrawer('left');
+  });
+  scrim.addEventListener('click', () => closeDrawer());
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeDrawer()));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  function showJumpTargets() {
+    rightTitle.childNodes[0].textContent = 'ON THIS PAGE';
+    rightSubtitle.textContent = 'Jump to a section';
+    rightBody.replaceChildren();
+    const label = document.createElement('p');
+    label.className = 'drawer-label'; label.textContent = 'Sections';
+    rightBody.append(label);
+    sections.forEach((section, i) => {
+      const b = document.createElement('button');
+      b.className = 'drawer-link';
+      b.innerHTML = `<span>${section.dataset.title}</span><span class="hint">${String(i+1).padStart(2,'0')}</span>`;
+      b.addEventListener('click', () => {
+        closeDrawer(false);
+        section.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+      });
+      rightBody.append(b);
+    });
+    rightFooter.textContent = 'Select a section to jump there';
+  }
+  function showAppearance() {
+    rightTitle.childNodes[0].textContent = 'APPEARANCE';
+    rightSubtitle.textContent = 'Reading & accessibility';
+    rightBody.replaceChildren();
+
+    const scale = document.createElement('div');
+    scale.className = 'setting';
+    scale.innerHTML = `<label class="setting-title" for="textScale">Text size <output id="scaleValue"></output></label><input id="textScale" type="range" min=".85" max="1.5" step=".05"><span class="setting-help">One app-wide setting. Applies to the reading surface and all drawers.</span>`;
+    rightBody.append(scale);
+    const range = scale.querySelector('input');
+    const output = scale.querySelector('output');
+    range.value = getComputedStyle(root).getPropertyValue('--text-scale').trim() || 1;
+    output.textContent = Math.round(Number(range.value)*100) + '%';
+    range.addEventListener('input', () => {
+      root.style.setProperty('--text-scale', range.value);
+      output.textContent = Math.round(Number(range.value)*100) + '%';
+      localStorage.setItem('siddur-text-scale', range.value);
+    });
+
+    const theme = document.createElement('div');
+    theme.className = 'setting';
+    theme.innerHTML = `<span class="setting-title">Theme</span><div class="theme-options">
+      <button class="theme-choice" data-theme-choice="dark">Dark</button>
+      <button class="theme-choice" data-theme-choice="light">Light</button>
+      <button class="theme-choice" data-theme-choice="contrast-light">Contrast light</button>
+      <button class="theme-choice" data-theme-choice="contrast-dark">Contrast dark</button>
+    </div><span class="setting-help">All four themes are represented in the design system; dark is the starting theme.</span>`;
+    rightBody.append(theme);
+    function refreshThemeButtons() {
+      theme.querySelectorAll('[data-theme-choice]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === root.dataset.theme)));
+    }
+    theme.querySelectorAll('[data-theme-choice]').forEach(b => b.addEventListener('click', () => {
+      root.dataset.theme = b.dataset.themeChoice;
+      localStorage.setItem('siddur-theme', root.dataset.theme);
+      refreshThemeButtons();
+    }));
+    refreshThemeButtons();
+
+    const note = document.createElement('div');
+    note.className = 'setting';
+    note.innerHTML = `<span class="setting-title">Accessibility roadmap</span><span class="setting-help">This prototype establishes global scaling and theme tokens. Later: font family, line spacing, Hebrew/translation display, reduced motion, and contrast refinements.</span>`;
+    rightBody.append(note);
+    rightFooter.textContent = 'Settings are saved locally in this browser';
+  }
+  function showAbout() {
+    rightTitle.childNodes[0].textContent = 'ABOUT';
+    rightSubtitle.textContent = 'Prototype information';
+    rightBody.replaceChildren();
+    const p = document.createElement('p'); p.className = 'setting-help';
+    p.textContent = 'A single-file interaction prototype. Prayer content is static placeholder text; calendar and prayer applicability are intentionally not implemented.';
+    rightBody.append(p);
+    rightFooter.textContent = 'Siddur reading prototype';
+  }
+
+  document.querySelectorAll('.section-open').forEach(b => b.addEventListener('click', () => {
+    showJumpTargets(); openDrawer('right');
+  }));
+  document.getElementById('openAppearance').addEventListener('click', () => {
+    showAppearance(); openDrawer('right');
+  });
+  document.getElementById('openAbout').addEventListener('click', () => {
+    showAbout(); openDrawer('right');
+  });
+
+  // Demo-only app navigation: keeps the current reading surface, and shows a clear placeholder.
+  document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-page]').forEach(x => x.classList.toggle('active', x === b));
+    closeDrawer(false);
+    if (b.dataset.page !== 'prayers') {
+      showAbout();
+      rightTitle.childNodes[0].textContent = b.textContent.trim().toUpperCase();
+      rightSubtitle.textContent = 'Not implemented in this prototype';
+      rightBody.innerHTML = '<div class="setting"><span class="setting-title">Coming later</span><span class="setting-help">This item represents a separate app destination. The demo keeps the reading surface in place so we can focus on drawer behavior.</span></div>';
+      openDrawer('right');
+    }
+  }));
+
+  // Unified horizontal pointer gesture handling. Vertical movement is left to page scrolling.
+  const EDGE = 22, INTENT = 12, DISTANCE = 72, VELOCITY = .45;
+  function drawerX(which, dx) {
+    const width = drawers[which].getBoundingClientRect().width;
+    if (which === 'left') return Math.max(-width, Math.min(0, dx - (gesture?.startOpen ? 0 : width)));
+    return Math.min(width, Math.max(0, dx + (gesture?.startOpen ? 0 : width)));
+  }
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const x = e.clientX;
+    let which = null, startOpen = false;
+    if (activeDrawer) {
+      which = activeDrawer; startOpen = true;
+      const panel = drawers[which].getBoundingClientRect();
+      if (x < panel.left || x > panel.right) return;
+    } else if (x <= EDGE) which = 'left';
+    else if (x >= innerWidth - EDGE) which = 'right';
+    if (!which) return;
+    gesture = {which, startX:x, startY:e.clientY, lastX:x, lastT:performance.now(), velocity:0, startOpen, dragging:false, pointerId:e.pointerId};
+  }, {passive:true});
+
+  document.addEventListener('pointermove', e => {
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    const dx = e.clientX - gesture.startX, dy = e.clientY - gesture.startY;
+    if (!gesture.dragging) {
+      if (Math.abs(dy) > INTENT && Math.abs(dy) > Math.abs(dx)) { gesture = null; return; }
+      const opens = gesture.which === 'left' ? dx > 0 : dx < 0;
+      const closes = gesture.which === 'left' ? dx < 0 : dx > 0;
+      if (Math.abs(dx) < INTENT || !(gesture.startOpen ? closes : opens) || Math.abs(dx) < Math.abs(dy)*1.2) return;
+      gesture.dragging = true;
+      if (!gesture.startOpen) openDrawer(gesture.which);
+      drawers[gesture.which].classList.add('dragging');
+    }
+    const now = performance.now();
+    gesture.velocity = (e.clientX - gesture.lastX) / Math.max(1, now - gesture.lastT);
+    gesture.lastX = e.clientX; gesture.lastT = now;
+    const width = drawers[gesture.which].getBoundingClientRect().width;
+    const dxNow = e.clientX - gesture.startX;
+    let position;
+    if (gesture.which === 'left') position = gesture.startOpen ? Math.min(0, dxNow) : Math.min(0, -width + dxNow);
+    else position = gesture.startOpen ? Math.max(0, dxNow) : Math.max(0, width + dxNow);
+    drawers[gesture.which].style.transform = `translateX(${position}px)`;
+    e.preventDefault();
+  }, {passive:false});
+
+  function finishGesture(e) {
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    const g = gesture; gesture = null;
+    if (!g.dragging) return;
+    const dx = e.clientX - g.startX;
+    const width = drawers[g.which].getBoundingClientRect().width;
+    const progress = Math.abs(dx) / width;
+    const shouldOpen = g.startOpen
+      ? !(progress > .22 || (g.which === 'left' ? g.velocity < -.45 : g.velocity > .45))
+      : (progress > .28 || (g.which === 'left' ? g.velocity > .45 : g.velocity < -.45));
+    drawers[g.which].classList.remove('dragging');
+    drawers[g.which].style.transform = '';
+    if (!shouldOpen) closeDrawer(false);
+    else { drawers[g.which].classList.add('open'); activeDrawer = g.which; }
+  }
+  document.addEventListener('pointerup', finishGesture);
+  document.addEventListener('pointercancel', finishGesture);
+})();
+</script>
+</body>
+</html>
