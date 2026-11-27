@@ -1,0 +1,1102 @@
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Siddur — Interaction Demo</title>
+
+<style>
+/* =========================================================
+   THEMES
+   ========================================================= */
+
+:root {
+  --drawer-width: min(65vw, 420px);
+  --ease: cubic-bezier(.2,.78,.22,1);
+  --duration: 280ms;
+  --accent: #c8a875;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111315;
+  --surface: #1c2023;
+  --raised: #262b2f;
+  --text: #eeeae2;
+  --muted: #a7a49c;
+  --line: rgba(255,255,255,.13);
+  --accent: #c8a875;
+  --scrim: rgba(0,0,0,.62);
+  --selected: rgba(200,168,117,.13);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f2eb;
+  --surface: #fffdf8;
+  --raised: #eee9df;
+  --text: #292722;
+  --muted: #77736a;
+  --line: rgba(0,0,0,.13);
+  --accent: #8b672e;
+  --scrim: rgba(0,0,0,.38);
+  --selected: rgba(139,103,46,.12);
+}
+
+html[data-theme="contrast-dark"] {
+  color-scheme: dark;
+  --bg: #000;
+  --surface: #080808;
+  --raised: #171717;
+  --text: #fff;
+  --muted: #e0e0e0;
+  --line: rgba(255,255,255,.55);
+  --accent: #ffdc00;
+  --scrim: rgba(0,0,0,.8);
+  --selected: rgba(255,220,0,.2);
+}
+
+html[data-theme="contrast-light"] {
+  color-scheme: light;
+  --bg: #fff;
+  --surface: #fff;
+  --raised: #eee;
+  --text: #000;
+  --muted: #333;
+  --line: rgba(0,0,0,.65);
+  --accent: #003c9e;
+  --scrim: rgba(0,0,0,.55);
+  --selected: rgba(0,60,158,.12);
+}
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font: 1rem/1.65 Georgia, "Times New Roman", serif;
+  transition: background .2s, color .2s;
+}
+
+button, select, input {
+  font: inherit;
+  color: inherit;
+}
+
+button { cursor: pointer; }
+
+main {
+  width: min(100%, 720px);
+  margin: auto;
+  padding: clamp(24px, 6vw, 56px) clamp(22px, 6vw, 48px) 120px;
+}
+
+.eyebrow {
+  font: 600 .68rem/1.4 system-ui, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  font-size: 2.2rem;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: .45rem 0 1rem;
+}
+
+.lede {
+  color: var(--muted);
+  font: .9rem/1.7 system-ui, sans-serif;
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  position: relative;
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 2.6rem 0 .7rem;
+  padding-right: 2rem;
+  color: var(--accent);
+  cursor: pointer;
+  scroll-margin-top: 24px;
+}
+
+/* Section arrow */
+h2::after {
+  content: "›";
+  position: absolute;
+  right: .2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 1.5rem/1 system-ui, sans-serif;
+  color: var(--muted);
+  opacity: .55;
+  transition: opacity .15s, transform .15s;
+}
+
+h2:hover::after {
+  opacity: 1;
+  transform: translate(3px,-50%);
+}
+
+p { margin: .8rem 0; }
+
+.demo-card {
+  margin: 1.5rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font: .84rem/1.6 system-ui, sans-serif;
+}
+
+.demo-card strong { color: var(--accent); }
+
+/* =========================================================
+   EDGE GESTURES
+   ========================================================= */
+
+.edge {
+  position: fixed;
+  z-index: 8;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: transparent;
+  touch-action: pan-y;
+  cursor: ew-resize;
+}
+
+.edge.left { left: 0; }
+.edge.right { right: 0; }
+
+.edge::after {
+  content: "";
+  position: absolute;
+  top: 45%;
+  height: 76px;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--muted);
+  opacity: .25;
+}
+
+.edge.left::after { left: 3px; }
+.edge.right::after { right: 3px; }
+
+/* =========================================================
+   OVERLAY / DRAWERS
+   ========================================================= */
+
+.scrim {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  background: var(--scrim);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration) var(--ease),
+    visibility var(--duration);
+}
+
+.scrim.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer {
+  position: fixed;
+  z-index: 11;
+  top: 0;
+  bottom: 0;
+  width: var(--drawer-width);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 15px 60px #0009;
+  will-change: transform;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  border-color: var(--line);
+}
+
+.drawer.left {
+  left: 0;
+  width: min(86vw, 350px);
+  transform: translate3d(-101%,0,0);
+  border-right: 1px solid var(--line);
+}
+
+.drawer.right {
+  right: 0;
+  transform: translate3d(101%,0,0);
+  border-left: 1px solid var(--line);
+}
+
+.drawer.is-open { transform: translate3d(0,0,0); }
+
+.drawer.animating {
+  transition: transform var(--duration) var(--ease);
+}
+
+.drawer.gesture-active { transition: none; }
+
+.drawer-head {
+  min-height: 76px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  font: 600 .78rem/1.4 system-ui, sans-serif;
+  letter-spacing: .1em;
+}
+
+.drawer-head small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-top: 4px;
+}
+
+.close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  font: 1.2rem system-ui;
+}
+
+.drawer-content {
+  padding: 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+}
+
+.item {
+  padding: 13px 12px;
+  border-radius: 9px;
+  margin: 3px 0;
+  font: .9rem system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.item:hover { background: var(--raised); }
+
+.item.current {
+  background: var(--selected);
+  color: var(--accent);
+}
+
+.drawer-foot {
+  border-top: 1px solid var(--line);
+  padding: 12px 18px;
+  color: var(--muted);
+  font: .7rem system-ui, sans-serif;
+}
+
+/* =========================================================
+   PREFERENCES DRAWER
+   ========================================================= */
+
+.preference-group {
+  margin: 0 0 26px;
+  font-family: system-ui, sans-serif;
+}
+
+.preference-group label {
+  display: block;
+  font-size: .88rem;
+  margin-bottom: 10px;
+}
+
+.preference-description {
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.scale-value {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.action-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 12px;
+  margin: 8px 0;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font: .88rem system-ui, sans-serif;
+}
+
+/* =========================================================
+   FULL-SCREEN SETTINGS PAGE
+   ========================================================= */
+
+.settings-page {
+  position: fixed;
+  z-index: 12;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  transform: translate3d(101%,0,0);
+  box-shadow: 0 0 60px #0008;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+.settings-page.is-open {
+  transform: translate3d(0,0,0);
+}
+
+.settings-page.animating {
+  transition: transform var(--duration) var(--ease);
+}
+
+.settings-header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.back-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  font: 1.5rem system-ui, sans-serif;
+}
+
+.settings-title {
+  font: 600 1rem system-ui, sans-serif;
+}
+
+.settings-subtitle {
+  display: block;
+  font: .75rem system-ui, sans-serif;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.settings-content {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.settings-section {
+  margin-bottom: 30px;
+}
+
+.settings-section h2 {
+  font: 600 .8rem system-ui, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+  padding: 0;
+  cursor: default;
+}
+
+.settings-section h2::after { content: none; }
+
+.setting-row {
+  padding: 15px 12px;
+  border-bottom: 1px solid var(--line);
+  font: .9rem/1.5 system-ui, sans-serif;
+}
+
+.setting-row small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: .76rem;
+}
+
+.setting-row select {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.settings-placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status {
+  position: fixed;
+  z-index: 2;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--surface);
+  color: var(--muted);
+  font: .68rem system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity .5s;
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<main id="readingSurface">
+  <div class="eyebrow">Siddur · interaction prototype</div>
+  <h1>Daily Prayers</h1>
+  <div class="lede">
+    Swipe inward from either edge to open a drawer.
+    Tap a section heading to open the section index.
+    Scroll vertically as usual.
+  </div>
+
+  <div class="demo-card">
+    <strong>Current prototype features</strong><br>
+    Automatic section index · Reading preferences · Four themes ·
+    Text scaling · Hand preference · Full-screen settings
+  </div>
+
+  <h2>ברכות השחר</h2>
+  <p>מוֹדֶה אֲנִי לְפָנֶיךָ מֶלֶךְ חַי וְקַיָּם, שֶׁהֶחֱזַרְתָּ בִּי נִשְׁמָתִי בְּחֶמְלָה, רַבָּה אֱמוּנָתֶךָ.</p>
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae justo sed neque facilisis elementum. Praesent at lectus vitae erat consequat aliquet.</p>
+
+  <h2>פסוקי דזמרה</h2>
+  <p>בָּרוּךְ שֶׁאָמַר וְהָיָה הָעוֹלָם, בָּרוּךְ הוּא. בָּרוּךְ עוֹשֶׂה בְרֵאשִׁית, בָּרוּךְ אוֹמֵר וְעוֹשֶׂה.</p>
+  <p>Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus.</p>
+
+  <h2>שמע ישראל</h2>
+  <p>שְׁמַע יִשְׂרָאֵל יְיָ אֱלֹהֵינוּ יְיָ אֶחָד.</p>
+  <p>Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt.</p>
+
+  <h2>עמידה</h2>
+  <p>אֲדֹנָי שְׂפָתַי תִּפְתָּח וּפִי יַגִּיד תְּהִלָּתֶךָ.</p>
+  <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>
+
+  <h2>תחנון</h2>
+  <p>לְךָ יְיָ הַצְּדָקָה וְלָנוּ בֹּשֶׁת הַפָּנִים.</p>
+  <p>Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.</p>
+
+  <h2>עלינו לשבח</h2>
+  <p>עָלֵינוּ לְשַׁבֵּחַ לַאֲדוֹן הַכֹּל, לָתֵת גְּדֻלָּה לְיוֹצֵר בְּרֵאשִׁית.</p>
+  <p>Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc.</p>
+</main>
+
+<!-- Gesture zones -->
+<div class="edge left" id="leftEdge"></div>
+<div class="edge right" id="rightEdge"></div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- LEFT: APP NAVIGATION -->
+<aside class="drawer left" id="leftDrawer" aria-label="App navigation">
+  <div class="drawer-head">
+    <div>APP NAVIGATION<small>Move between prayer collections</small></div>
+    <button class="close" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-content">
+    <div class="item current">Daily prayers</div>
+    <div class="item">Shabbat prayers</div>
+    <div class="item">Festival prayers</div>
+    <div class="item">Blessings</div>
+    <div class="item">Special occasions</div>
+  </div>
+  <div class="drawer-foot">APPLICATION NAVIGATION</div>
+</aside>
+
+<!-- RIGHT: AUTOMATIC SECTION INDEX -->
+<aside class="drawer right" id="jumpDrawer" aria-label="Section index">
+  <div class="drawer-head">
+    <div>ON THIS PAGE<small>Jump to a section</small></div>
+    <button class="close" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-content">
+    <div id="jumpItems"></div>
+    <div class="demo-card">
+      Select a section to jump directly to it.
+    </div>
+    <button class="action-button" id="openPreferences">
+      Reading preferences →
+    </button>
+  </div>
+  <div class="drawer-foot">SECTION INDEX</div>
+</aside>
+
+<!-- RIGHT: READING PREFERENCES -->
+<aside class="drawer right" id="preferencesDrawer" aria-label="Reading preferences">
+  <div class="drawer-head">
+    <div>READING PREFERENCES<small>Adjust your reading experience</small></div>
+    <button class="close" aria-label="Close">×</button>
+  </div>
+
+  <div class="drawer-content">
+    <div class="preference-group">
+      <label for="textScale">
+        Text size · <span class="scale-value" id="scaleValue">42.5</span>
+      </label>
+      <input id="textScale" type="range" min="10" max="75"
+             step=".5" value="42.5">
+      <div class="range-labels">
+        <span>10 · Small</span>
+        <span>42.5 · Normal</span>
+        <span>75 · Large</span>
+      </div>
+      <div class="preference-description">
+        Changes the size of both the reading text and interface.
+      </div>
+    </div>
+
+    <button class="action-button" id="openSettings">
+      All settings →
+    </button>
+  </div>
+  <div class="drawer-foot">READING PREFERENCES</div>
+</aside>
+
+<!-- FULL-SCREEN SETTINGS -->
+<section class="settings-page" id="settingsPage" aria-label="Settings">
+  <header class="settings-header">
+    <button class="back-button" id="settingsBack" aria-label="Back">‹</button>
+    <div>
+      <div class="settings-title">Settings</div>
+      <span class="settings-subtitle">Customize your Siddur</span>
+    </div>
+  </header>
+
+  <div class="settings-content">
+
+    <section class="settings-section">
+      <h2>Appearance</h2>
+
+      <div class="setting-row">
+        Theme
+        <small>Choose the colors used throughout the app.</small>
+        <select id="themeSelect">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="contrast-dark">High contrast · Dark</option>
+          <option value="contrast-light">High contrast · Light</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        Text size
+        <small>Fine-tune the size of reading text and interface.</small>
+        <input id="settingsScale" type="range" min="10" max="75"
+               step=".5" value="42.5">
+        <div>Current value: <span id="settingsScaleValue">42.5</span></div>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2>Interaction</h2>
+
+      <div class="setting-row">
+        Preferred hand
+        <small>
+          Adjusts the sensitivity and reach of the drawer gestures.
+        </small>
+        <select id="handSelect">
+          <option value="center">Center · Default</option>
+          <option value="left">Left-handed</option>
+          <option value="right">Right-handed</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2>Account</h2>
+      <div class="setting-row">
+        Account details
+        <small class="settings-placeholder">Account management will be added later.</small>
+      </div>
+      <div class="setting-row">
+        Sign-in and security
+        <small class="settings-placeholder">Not implemented in this prototype.</small>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2>Notifications</h2>
+      <div class="setting-row">
+        Prayer reminders
+        <small class="settings-placeholder">Notification preferences will go here.</small>
+      </div>
+      <div class="setting-row">
+        Daily notifications
+        <small class="settings-placeholder">Not implemented in this prototype.</small>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2>About</h2>
+      <div class="setting-row">
+        About this Siddur
+        <small class="settings-placeholder">App information and credits.</small>
+      </div>
+    </section>
+
+  </div>
+</section>
+
+<div class="status" id="status">Loading gesture library…</div>
+
+<script type="module">
+import { DragGesture } from
+  'https://esm.sh/@use-gesture/vanilla@10.3.1';
+
+/* =========================================================
+   ELEMENTS AND STATE
+   ========================================================= */
+
+const scrim = document.querySelector('#scrim');
+const status = document.querySelector('#status');
+
+const panels = {
+  left: document.querySelector('#leftDrawer'),
+  jump: document.querySelector('#jumpDrawer'),
+  preferences: document.querySelector('#preferencesDrawer'),
+  settings: document.querySelector('#settingsPage')
+};
+
+const edges = {
+  left: document.querySelector('#leftEdge'),
+  right: document.querySelector('#rightEdge')
+};
+
+let openPanel = null;
+let handPreference = 'center';
+
+const gestures = [];
+
+/* =========================================================
+   PANEL POSITIONING
+   ========================================================= */
+
+function isLeftPanel(name) {
+  return name === 'left';
+}
+
+function width(name) {
+  return panels[name].getBoundingClientRect().width;
+}
+
+function closedX(name) {
+  return isLeftPanel(name) ? -width(name) : width(name);
+}
+
+function setX(name, x) {
+  const w = width(name);
+  const bounded = isLeftPanel(name)
+    ? Math.max(-w, Math.min(0, x))
+    : Math.max(0, Math.min(w, x));
+
+  panels[name].style.transform = `translate3d(${bounded}px,0,0)`;
+
+  const progress = 1 - Math.abs(bounded) / w;
+  scrim.style.opacity = String(progress * .62);
+  scrim.classList.toggle('visible', progress > .005);
+}
+
+function settle(name, shouldOpen) {
+  const panel = panels[name];
+
+  panel.classList.add('animating');
+  panel.style.transform = '';
+
+  if (shouldOpen) {
+    panel.classList.add('is-open');
+    openPanel = name;
+    scrim.classList.add('visible');
+    scrim.style.opacity = '';
+    document.body.style.overflow = 'hidden';
+  } else {
+    panel.classList.remove('is-open');
+
+    if (openPanel === name) {
+      openPanel = null;
+    }
+
+    scrim.classList.remove('visible');
+    scrim.style.opacity = '';
+    document.body.style.overflow = '';
+  }
+
+  window.setTimeout(() => {
+    panel.classList.remove('animating');
+  }, 320);
+}
+
+function openPanelView(name) {
+  if (openPanel === name) return;
+
+  const previous = openPanel;
+
+  if (previous) {
+    settle(previous, false);
+  }
+
+  settle(name, true);
+}
+
+function closePanel() {
+  if (openPanel) settle(openPanel, false);
+}
+
+/* =========================================================
+   EDGE GESTURES
+   ========================================================= */
+
+function dragFromEdge(name, state) {
+  if (openPanel && openPanel !== name) return;
+
+  const { movement: [mx], velocity: [vx], direction: [dx], last } = state;
+
+  if (state.first) {
+    panels[name].classList.remove('animating');
+    panels[name].classList.add('gesture-active');
+    setX(name, closedX(name));
+  }
+
+  const x = name === 'left'
+    ? -width(name) + mx
+    : width(name) + mx;
+
+  setX(name, x);
+
+  if (last) {
+    const progress = 1 - Math.abs(
+      Number.parseFloat(
+        panels[name].style.transform.match(/translate3d\(([-\d.]+)/)?.[1] || 0
+      )
+    ) / width(name);
+
+    const inwardFlick = Math.abs(vx) > .45 &&
+      ((name === 'left' && dx > 0) ||
+       (name === 'jump' && dx < 0));
+
+    const shouldOpen = progress > .38 || inwardFlick;
+
+    panels[name].classList.remove('gesture-active');
+    settle(name, shouldOpen);
+  }
+}
+
+/* =========================================================
+   DRAG TO CLOSE
+   ========================================================= */
+
+function dragOnPanel(name, state) {
+  const { movement: [mx], velocity: [vx], direction: [dx], last } = state;
+
+  if (state.first) {
+    panels[name].classList.remove('animating');
+    panels[name].classList.add('gesture-active');
+  }
+
+  setX(name, mx);
+
+  if (last) {
+    const w = width(name);
+    const current = Number.parseFloat(
+      panels[name].style.transform.match(/translate3d\(([-\d.]+)/)?.[1] || 0
+    );
+
+    const progress = 1 - Math.abs(current) / w;
+    const closingFlick = name === 'left' ? dx < 0 : dx > 0;
+
+    const shouldRemainOpen =
+      progress > .62 ||
+      (Math.abs(vx) > .45 && !closingFlick);
+
+    panels[name].classList.remove('gesture-active');
+    settle(name, shouldRemainOpen);
+  }
+}
+
+/* =========================================================
+   HAND PREFERENCE / GESTURE SENSITIVITY
+   ========================================================= */
+
+function applyHandPreference(value) {
+  handPreference = value;
+
+  let leftWidth = 20;
+  let rightWidth = 20;
+  let leftThreshold = 4;
+  let rightThreshold = 4;
+
+  if (value === 'left') {
+    rightWidth = 30;
+    leftWidth = 15;
+    rightThreshold = 3;
+    leftThreshold = 5;
+  } else if (value === 'right') {
+    leftWidth = 30;
+    rightWidth = 15;
+    leftThreshold = 3;
+    rightThreshold = 5;
+  }
+
+  edges.left.style.width = `${leftWidth}px`;
+  edges.right.style.width = `${rightWidth}px`;
+
+  attachGestures(leftThreshold, rightThreshold);
+}
+
+function attachGestures(leftThreshold = 4, rightThreshold = 4) {
+  gestures.splice(0).forEach(g => g.destroy());
+
+  const baseConfig = {
+    axis: 'x',
+    filterTaps: true,
+    swipe: {
+      distance: 45,
+      velocity: .35,
+      duration: 500
+    },
+    pointer: { capture: true }
+  };
+
+  gestures.push(
+    new DragGesture(
+      edges.left,
+      state => dragFromEdge('left', state),
+      { ...baseConfig, threshold: leftThreshold }
+    )
+  );
+
+  gestures.push(
+    new DragGesture(
+      edges.right,
+      state => dragFromEdge('jump', state),
+      { ...baseConfig, threshold: rightThreshold }
+    )
+  );
+
+  Object.entries(panels).forEach(([name, element]) => {
+    if (name === 'settings') return;
+
+    gestures.push(
+      new DragGesture(
+        element,
+        state => {
+          if (openPanel === name) {
+            dragOnPanel(name, state);
+          }
+        },
+        baseConfig
+      )
+    );
+  });
+}
+
+/* =========================================================
+   AUTOMATIC SECTION INDEX
+   ========================================================= */
+
+const headings = [...document.querySelectorAll('#readingSurface h2')];
+const jumpItems = document.querySelector('#jumpItems');
+
+headings.forEach((heading, index) => {
+  if (!heading.id) heading.id = `section-${index + 1}`;
+
+  const item = document.createElement('div');
+  item.className = 'item';
+  item.textContent =
+    `${String(index + 1).padStart(2, '0')} · ${heading.textContent}`;
+
+  item.addEventListener('click', () => {
+    closePanel();
+    heading.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  });
+
+  jumpItems.appendChild(item);
+
+  heading.addEventListener('click', () => {
+    openPanelView('jump');
+  });
+});
+
+/* =========================================================
+   TEXT SCALING
+   ========================================================= */
+
+const textScale = document.querySelector('#textScale');
+const settingsScale = document.querySelector('#settingsScale');
+const scaleValue = document.querySelector('#scaleValue');
+const settingsScaleValue = document.querySelector('#settingsScaleValue');
+
+function applyTextScale(value) {
+  const n = Number(value);
+
+  /*
+    Slider:
+      10   = 0.65x
+      42.5 = 1.00x
+      75   = 2.80x
+
+    The midpoint is deliberately the normal reading size.
+  */
+
+  let multiplier;
+
+  if (n <= 42.5) {
+    multiplier = .65 + ((n - 10) / 32.5) * .35;
+  } else {
+    multiplier = 1 + ((n - 42.5) / 32.5) * 1.8;
+  }
+
+  document.documentElement.style.fontSize =
+    `${16 * multiplier}px`;
+
+  textScale.value = n;
+  settingsScale.value = n;
+  scaleValue.textContent = n;
+  settingsScaleValue.textContent = n;
+}
+
+textScale.addEventListener('input', e => {
+  applyTextScale(e.target.value);
+});
+
+settingsScale.addEventListener('input', e => {
+  applyTextScale(e.target.value);
+});
+
+/* =========================================================
+   THEMES
+   ========================================================= */
+
+const themeSelect = document.querySelector('#themeSelect');
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeSelect.value = theme;
+}
+
+themeSelect.addEventListener('change', e => {
+  applyTheme(e.target.value);
+});
+
+/* =========================================================
+   SETTINGS NAVIGATION
+   ========================================================= */
+
+document.querySelector('#openPreferences').addEventListener('click', () => {
+  openPanelView('preferences');
+});
+
+document.querySelector('#openSettings').addEventListener('click', () => {
+  openPanelView('settings');
+});
+
+document.querySelector('#settingsBack').addEventListener('click', () => {
+  openPanelView('preferences');
+});
+
+document.querySelector('#handSelect').addEventListener('change', e => {
+  applyHandPreference(e.target.value);
+});
+
+/* =========================================================
+   CLOSE CONTROLS
+   ========================================================= */
+
+document.querySelectorAll('.close').forEach(button => {
+  button.addEventListener('click', closePanel);
+});
+
+scrim.addEventListener('click', closePanel);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+});
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+applyTextScale(42.5);
+applyTheme('dark');
+applyHandPreference('center');
+
+status.textContent = 'Ready · swipe from either edge';
+setTimeout(() => {
+  status.style.opacity = '.35';
+}, 4500);
+
+window.addEventListener('beforeunload', () => {
+  gestures.forEach(g => g.destroy());
+});
+</script>
+</body>
+</html>
