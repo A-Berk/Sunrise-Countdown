@@ -119,6 +119,11 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
 .setting-row input[type=range]{margin-top:12px}
 .status{position:fixed;z-index:2;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--muted);font:.68rem system-ui,sans-serif;white-space:nowrap;pointer-events:none;transition:opacity .5s}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.drawer, .drawer * {
+  -webkit-user-select:none;
+  user-select:none;
+}
 </style>
 </head>
 <body>
@@ -316,6 +321,7 @@ const edges = {left:$('#leftEdge'),right:$('#rightEdge')};
 let openPanel = null;
 let previousPanel = null;
 let currentPage = 'mein';
+let panelDragStartX = 0;
 const gestures = [];
 
 /* Replace this data function with live calendar/location providers later. */
@@ -351,7 +357,7 @@ function setX(name,x) {
   panels[name].style.transform = `translate3d(${bounded}px,0,0)`;
 
   const progress = 1 - Math.abs(bounded) / w;
-  scrim.style.opacity = String(progress * .62);
+  scrim.style.opacity = String(progress);
   scrim.classList.toggle('visible',progress > .005);
 }
 
@@ -434,16 +440,17 @@ function dragFromEdge(name,state) {
   }
 }
 
-/* Drag to close */
 function dragOnPanel(name,state) {
   const {movement:[mx],velocity:[vx],direction:[dx],last} = state;
 
   if (state.first) {
+    panelDragStartX = getCurrentX(name);
+
     panels[name].classList.remove('animating');
     panels[name].classList.add('gesture-active');
   }
 
-  setX(name,mx);
+  setX(name,panelDragStartX + mx);
 
   if (last) {
     const progress = 1 - Math.abs(getCurrentX(name)) / panelWidth(name);
@@ -463,8 +470,7 @@ function attachGestures(leftThreshold = 4,rightThreshold = 4) {
   const config = {
     axis:'x',
     filterTaps:true,
-    swipe:{distance:45,velocity:.35,duration:500},
-    pointer:{capture:true}
+    swipe:{distance:45,velocity:.35,duration:500}
   };
 
   gestures.push(
@@ -641,6 +647,16 @@ document.addEventListener('click',event => {
 $('#settingsBack').addEventListener('click',() => {
   const destination = previousPanel === 'left' ? 'left' : 'options';
   openPanelView(destination);
+});
+
+$('#leftSettingsButton').addEventListener('click',event => {
+  event.preventDefault();
+  openSettings('left');
+});
+
+$('#optionsSettingsButton').addEventListener('click',event => {
+  event.preventDefault();
+  openSettings('options');
 });
 
 document.querySelectorAll('.close').forEach(button => {
