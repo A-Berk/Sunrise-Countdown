@@ -1,0 +1,618 @@
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Siddur — Interaction Demo</title>
+<style>
+:root{--ease:cubic-bezier(.2,.78,.22,1);--duration:280ms}
+html[data-theme="dark"]{color-scheme:dark;--bg:#111315;--surface:#1c2023;--raised:#262b2f;--text:#eeeae2;--muted:#a7a49c;--line:rgba(255,255,255,.13);--accent:#c8a875;--scrim:rgba(0,0,0,.62);--selected:rgba(200,168,117,.13)}
+html[data-theme="light"]{color-scheme:light;--bg:#f5f2eb;--surface:#fffdf8;--raised:#eee9df;--text:#292722;--muted:#77736a;--line:rgba(0,0,0,.13);--accent:#8b672e;--scrim:rgba(0,0,0,.38);--selected:rgba(139,103,46,.12)}
+html[data-theme="contrast-dark"]{color-scheme:dark;--bg:#000;--surface:#080808;--raised:#171717;--text:#fff;--muted:#e0e0e0;--line:rgba(255,255,255,.55);--accent:#ffdc00;--scrim:rgba(0,0,0,.8);--selected:rgba(255,220,0,.2)}
+html[data-theme="contrast-light"]{color-scheme:light;--bg:#fff;--surface:#fff;--raised:#eee;--text:#000;--muted:#333;--line:rgba(0,0,0,.65);--accent:#003c9e;--scrim:rgba(0,0,0,.55);--selected:rgba(0,60,158,.12)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+body{font:1rem/1.65 Georgia,"Times New Roman",serif;transition:background .2s,color .2s}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+main{width:min(100%,720px);margin:auto;padding:clamp(24px,6vw,56px) clamp(22px,6vw,48px) 120px}
+.reading-title-row{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:1.2rem}
+.reading-title-row h1{flex:1;min-width:0;font-size:2.2rem;font-weight:400;line-height:1.15;margin:0;overflow-wrap:anywhere}
+.title-control{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--surface);font:1.3rem/1 Arial,sans-serif}
+.title-control:hover{background:var(--raised)}
+.page-subtitle{color:var(--muted);font:.9rem/1.6 system-ui,sans-serif;margin:-.5rem 0 2rem}
+.eyebrow{font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h2{position:relative;font-size:1.35rem;font-weight:500;margin:2.6rem 0 .7rem;padding-right:2rem;color:var(--accent);cursor:pointer;scroll-margin-top:24px;overflow-wrap:anywhere}
+h2::after{content:"›";position:absolute;right:.2rem;top:50%;transform:translateY(-50%);font:1.5rem/1 system-ui,sans-serif;color:var(--muted);opacity:.55;transition:opacity .15s,transform .15s}
+h2:hover::after{opacity:1;transform:translate(3px,-50%)}
+p{margin:.8rem 0}
+.demo-card{margin:1.5rem 0;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:.84rem/1.6 system-ui,sans-serif;overflow-wrap:anywhere}
+.demo-card strong{color:var(--accent)}
+.reading-page[hidden]{display:none!important}
+
+/* Edge gestures */
+.edge{position:fixed;z-index:8;top:0;bottom:0;width:20vw;background:transparent;touch-action:pan-y;cursor:ew-resize}
+.edge.left{left:0}
+.edge.right{right:0}
+.edge::after{content:"";position:absolute;top:45%;height:76px;width:4px;border-radius:4px;background:var(--muted);opacity:.25}
+.edge.left::after{left:3px}
+.edge.right::after{right:3px}
+
+/* Drawers */
+.scrim{position:fixed;z-index:10;inset:0;background:var(--scrim);opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--duration) var(--ease),visibility var(--duration)}
+.scrim.visible{opacity:1;visibility:visible;pointer-events:auto}
+.drawer{position:fixed;z-index:11;top:0;bottom:0;width:min(65vw,420px);background:var(--surface);color:var(--text);display:flex;flex-direction:column;box-shadow:0 15px 60px #0009;will-change:transform;touch-action:pan-y;overscroll-behavior:contain;border-color:var(--line);overflow:hidden}
+.drawer.left{left:0;width:min(86vw,350px);transform:translate3d(-101%,0,0);border-right:1px solid var(--line)}
+.drawer.right{right:0;transform:translate3d(101%,0,0);border-left:1px solid var(--line)}
+.drawer.is-open{transform:translate3d(0,0,0)}
+.drawer.animating{transition:transform var(--duration) var(--ease)}
+.drawer.gesture-active{transition:none}
+html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
+.drawer-head{min-height:76px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);font:600 .9rem/1.4 system-ui,sans-serif;letter-spacing:.02em;flex-shrink:0;min-width:0}
+.drawer-head>div{flex:1;min-width:0;overflow-wrap:anywhere;white-space:normal}
+.drawer-head small{display:block;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:4px;overflow-wrap:anywhere}
+.close,.back-button{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;text-align:center;line-height:1;appearance:none;font-family:Arial,sans-serif}
+.close{font-size:23px}
+.drawer-content{padding:16px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1;min-width:0;overflow-wrap:anywhere}
+.item{padding:12px;border-radius:9px;margin:3px 0;font:.9rem system-ui,sans-serif;cursor:pointer;overflow-wrap:anywhere}
+.item:hover{background:var(--raised)}
+.item.current{background:var(--selected);color:var(--accent)}
+.nav-group{margin:0 0 18px}
+.nav-group-title{padding:8px 12px 4px;color:var(--muted);font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.drawer-foot{border-top:1px solid var(--line);padding:12px 16px;color:var(--muted);font:.72rem system-ui,sans-serif;flex-shrink:0;overflow-wrap:anywhere}
+.drawer-foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.drawer-foot-row .settings-link{width:auto;flex:1}
+.app-version{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Left drawer header */
+.header-info{position:relative;padding:30px 18px 18px;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif;flex-shrink:0}
+.header-info .close{position:absolute;top:12px;right:12px}
+.hebrew-date{font-size:1.35rem;font-weight:650;line-height:1.35;padding:28px 52px 8px 0;overflow-wrap:anywhere}
+.header-next-zman{font-size:.82rem;color:var(--muted);line-height:1.45}
+.header-parsha{font-size:.82rem;color:var(--muted);margin-top:5px;line-height:1.45}
+
+/* Options drawer */
+.drawer-section-title{margin:2px 0 12px;color:var(--muted);font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.options-section{padding:0 0 22px;margin:0 0 20px;border-bottom:1px solid var(--line)}
+.options-section:last-child{border-bottom:0}
+.options-section h3{font:600 1rem/1.4 system-ui,sans-serif;margin:0 0 5px;color:var(--text)}
+.section-kicker{font:600 .65rem/1.4 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.section-description{font:.78rem/1.5 system-ui,sans-serif;color:var(--muted);margin:0 0 12px}
+.option-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;font:.84rem/1.4 system-ui,sans-serif}
+.option-row label{flex:1;min-width:0}
+.option-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
+.option-row select{max-width:52%;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--raised)}
+.preference-group{margin:0 0 24px;font-family:system-ui,sans-serif;min-width:0}
+.preference-group label{display:block;font-size:.88rem;margin-bottom:10px;overflow-wrap:anywhere}
+.preference-description{color:var(--muted);font-size:.76rem;line-height:1.5;margin-top:6px}
+.scale-value{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:600}
+input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent)}
+.range-labels{display:flex;justify-content:space-between;gap:6px;color:var(--muted);font-size:.72rem}
+.settings-link{display:flex;align-items:center;gap:12px;width:100%;padding:15px 14px;border:1px solid var(--line);border-radius:10px;background:var(--raised);font:.9rem system-ui,sans-serif;text-align:left}
+.settings-link .gear{font-size:1.2rem;line-height:1}
+
+/* Settings */
+.settings-page{position:fixed;z-index:12;inset:0;width:100%;height:100%;background:var(--bg);color:var(--text);display:flex;flex-direction:column;transform:translate3d(101%,0,0);box-shadow:0 0 60px #0008;touch-action:pan-y;overscroll-behavior:contain;overflow:hidden}
+.settings-page.is-open{transform:translate3d(0,0,0)}
+.settings-page.animating{transition:transform var(--duration) var(--ease)}
+.settings-header{min-height:76px;display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0}
+.back-button{font-size:25px}
+.settings-title{font:600 1rem system-ui,sans-serif}
+.settings-content{width:min(100%,760px);margin:0 auto;padding:22px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
+.settings-section{margin-bottom:30px;min-width:0}
+.settings-section h2{font:600 .8rem system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;padding:0;cursor:default}
+.settings-section h2::after{content:none}
+.setting-row{padding:15px 12px;border-bottom:1px solid var(--line);font:.9rem/1.5 system-ui,sans-serif;min-width:0;overflow-wrap:anywhere}
+.setting-row small{display:block;color:var(--muted);margin-top:4px;font-size:.76rem}
+.setting-row select{display:block;width:100%;min-width:0;margin-top:10px;padding:10px;background:var(--raised);border:1px solid var(--line);border-radius:8px}
+.setting-row input[type=range]{margin-top:12px}
+.status{position:fixed;z-index:2;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--muted);font:.68rem system-ui,sans-serif;white-space:nowrap;pointer-events:none;transition:opacity .5s}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<main id="readingSurface">
+  <div class="eyebrow" id="pageCategory">Food blessings</div>
+  <div class="reading-title-row">
+    <h1 id="pageTitle">Me’in Ha’shalosh</h1>
+    <button class="title-control" id="pageOptionsButton" aria-label="Page options" title="Page options">⌄</button>
+    <button class="title-control" id="jumpButton" aria-label="Table of contents" title="Table of contents">☷</button>
+  </div>
+  <div class="page-subtitle" id="pageSubtitle">The after-blessing for the seven species and related foods.</div>
+
+  <section class="reading-page" data-page="mein" data-category="Food blessings" data-title="Me’in Ha’shalosh" data-subtitle="The after-blessing for the seven species and related foods.">
+    <h2>Opening blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <h2>On the produce</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <h2>On Shabbat and holidays</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <h2>Closing blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae justo sed neque facilisis elementum.</p>
+  </section>
+  <section class="reading-page" data-page="shacharis" data-category="Prayers" data-title="Shacharis" data-subtitle="The morning prayer service." hidden>
+    <h2>Morning blessings</h2><p>מוֹדֶה אֲנִי לְפָנֶיךָ מֶלֶךְ חַי וְקַיָּם.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <h2>Pesukei d’Zimrah</h2><p>בָּרוּךְ שֶׁאָמַר וְהָיָה הָעוֹלָם.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <h2>Shema and its blessings</h2><p>שְׁמַע יִשְׂרָאֵל יְיָ אֱלֹהֵינוּ יְיָ אֶחָד.</p>
+    <h2>Amidah</h2><p>אֲדֹנָי שְׂפָתַי תִּפְתָּח וּפִי יַגִּיד תְּהִלָּתֶךָ.</p>
+  </section>
+  <section class="reading-page" data-page="mincha" data-category="Prayers" data-title="Mincha" data-subtitle="The afternoon prayer service." hidden>
+    <h2>Ashrei</h2><p>אַשְׁרֵי יוֹשְׁבֵי בֵיתֶךָ.</p><h2>Amidah</h2><p>אֲדֹנָי שְׂפָתַי תִּפְתָּח וּפִי יַגִּיד תְּהִלָּתֶךָ.</p><h2>Closing prayers</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  </section>
+  <section class="reading-page" data-page="maariv" data-category="Prayers" data-title="Maariv" data-subtitle="The evening prayer service." hidden>
+    <h2>Shema and its blessings</h2><p>שְׁמַע יִשְׂרָאֵל יְיָ אֱלֹהֵינוּ יְיָ אֶחָד.</p><h2>Amidah</h2><p>אֲדֹנָי שְׂפָתַי תִּפְתָּח וּפִי יַגִּיד תְּהִלָּתֶךָ.</p><h2>Closing prayers</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  </section>
+  <section class="reading-page" data-page="birkat" data-category="Food blessings" data-title="Birchas Ha’mazon" data-subtitle="Grace after meals." hidden>
+    <h2>Opening blessing</h2><p>בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם.</p><h2>Second blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p><h2>Third blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p><h2>Fourth blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  </section>
+  <section class="reading-page" data-page="derech" data-category="Occasional prayers" data-title="Tefilas Ha’derech" data-subtitle="The traveler's prayer." hidden>
+    <h2>The prayer</h2><p>יְהִי רָצוֹן מִלְּפָנֶיךָ יְיָ אֱלֹהֵינוּ.</p><h2>Additional wording</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  </section>
+  <section class="reading-page" data-page="levanah" data-category="Occasional prayers" data-title="Kiddush Levanah" data-subtitle="The blessing of the new moon." hidden>
+    <h2>Opening</h2><p>בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם.</p><h2>The blessing</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p><h2>Closing passages</h2><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  </section>
+</main>
+
+<div class="edge left" id="leftEdge"></div>
+<div class="edge right" id="rightEdge"></div>
+<div class="scrim" id="scrim"></div>
+
+<!-- LEFT DRAWER: APP NAVIGATION -->
+<aside class="drawer left" id="leftDrawer" aria-label="App navigation">
+  <div class="header-info" id="siddurHeaderInfo">
+    <button class="close" aria-label="Close navigation">×</button>
+    <div class="hebrew-date" id="hebrewDate">י״ז בכסלו תשפ״ז</div>
+    <div class="header-next-zman" id="nextZman">סוף זמן קריאת שמע · 9:08 AM</div>
+    <div class="header-parsha" id="weeklyParsha">פרשת וישב</div>
+  </div>
+  <div class="drawer-content">
+    <div class="nav-group"><div class="nav-group-title">Prayers</div>
+      <div class="item nav-item" data-page="shacharis">Shacharis</div><div class="item nav-item" data-page="mincha">Mincha</div><div class="item nav-item" data-page="maariv">Maariv</div>
+    </div>
+    <div class="nav-group"><div class="nav-group-title">Food blessings</div>
+      <div class="item nav-item" data-page="birkat">Birchas Ha’mazon</div><div class="item nav-item" data-page="mein">Me’in Ha’shalosh</div>
+    </div>
+    <div class="nav-group"><div class="nav-group-title">Occasional prayers</div>
+      <div class="item nav-item" data-page="derech">Tefilas Ha’derech</div><div class="item nav-item" data-page="levanah">Kiddush Levanah</div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="drawer-foot-row">
+      <button class="settings-link" id="leftSettingsButton"><span class="gear" aria-hidden="true">⚙</span> Settings <span aria-hidden="true">→</span></button>
+      <span class="app-version">Version 0.1.0</span>
+    </div>
+  </div>
+</aside>
+
+<!-- RIGHT DRAWER: TABLE OF CONTENTS -->
+<aside class="drawer right" id="jumpDrawer" aria-label="Table of contents">
+  <div class="drawer-head"><div>Contents</div><button class="close" aria-label="Close">×</button></div>
+  <div class="drawer-content"><div id="jumpItems"></div></div>
+</aside>
+
+<!-- RIGHT DRAWER: PAGE OPTIONS -->
+<aside class="drawer right" id="optionsDrawer" aria-label="Page options">
+  <div class="drawer-head"><div>Options</div><button class="close" aria-label="Close">×</button></div>
+  <div class="drawer-content">
+    <div class="drawer-section-title">Local options</div>
+    <section class="options-section">
+      <div class="section-kicker">This page · often used</div>
+      <h3>Which blessings?</h3>
+      <p class="section-description">Choose the parts that apply to this meal.</p>
+      <div class="option-row"><label for="grainOption">Grain products</label><input id="grainOption" type="checkbox" checked></div>
+      <div class="option-row"><label for="wineOption">Wine / grape juice</label><input id="wineOption" type="checkbox"></div>
+      <div class="option-row"><label for="fruitOption">Seven species fruit</label><input id="fruitOption" type="checkbox"></div>
+    </section>
+    <section class="options-section">
+      <div class="section-kicker">This page · wording</div>
+      <h3>Text &amp; tradition</h3>
+      <div class="option-row"><label for="nusachSelect">Nusach</label><select id="nusachSelect"><option>Ashkenaz</option><option>Sephard</option><option>Edot HaMizrach</option><option>Other</option></select></div>
+      <div class="option-row"><label for="originSelect">Where was it grown?</label><select id="originSelect"><option>Israel</option><option>Outside Israel</option><option>Not specified</option></select></div>
+    </section>
+    <section class="options-section">
+      <div class="section-kicker">Calendar · automatic</div>
+      <h3>Holiday passage</h3>
+      <p class="section-description">Determined from the Hebrew calendar. A manual override can be added here.</p>
+      <div class="option-row"><label for="holidaySelect">Holiday</label><select id="holidaySelect"><option>Automatic</option><option>Regular day</option><option>Shabbat</option><option>Yom Tov</option><option>Other holiday</option></select></div>
+    </section>
+
+    <div class="drawer-section-title">Text preferences</div>
+    <section class="options-section">
+      <div class="preference-group">
+        <label for="optionsScale">Text size · <span class="scale-value" id="optionsScaleValue">42.5</span></label>
+        <input id="optionsScale" type="range" min="10" max="75" step=".5" value="42.5">
+        <div class="range-labels"><span>Small</span><span>Normal</span><span>Large</span></div>
+        <div class="preference-description">Changes the reading text and interface size.</div>
+      </div>
+    </section>
+
+    <div class="drawer-section-title">Occasional options</div>
+    <section class="options-section">
+      <div class="section-kicker">This page · occasional</div>
+      <h3>Additional words</h3>
+      <p class="section-description">Include optional words and phrases.</p>
+      <div class="option-row"><label for="optionalNa">Optional “na”</label><input id="optionalNa" type="checkbox"></div>
+      <div class="option-row"><label for="conjunctions">Additional conjunctions</label><input id="conjunctions" type="checkbox"></div>
+    </section>
+
+    <button class="settings-link" id="optionsSettingsButton"><span class="gear" aria-hidden="true">⚙</span> Settings <span aria-hidden="true">→</span></button>
+  </div>
+</aside>
+
+<!-- SETTINGS WINDOW -->
+<section class="settings-page" id="settingsPage" aria-label="Settings">
+  <header class="settings-header">
+    <button class="back-button" id="settingsBack" aria-label="Back">‹</button>
+    <div class="settings-title">Settings</div>
+  </header>
+  <div class="settings-content">
+    <section class="settings-section">
+      <h2>Appearance</h2>
+      <div class="setting-row">Theme
+        <small>Choose the colors used throughout the app.</small>
+        <select id="themeSelect">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="contrast-dark">High contrast · Dark</option>
+          <option value="contrast-light">High contrast · Light</option>
+        </select>
+      </div>
+      <div class="setting-row">Text size
+        <small>Fine-tune the size of reading text and interface.</small>
+        <input id="settingsScale" type="range" min="10" max="75" step=".5" value="42.5">
+        <div>Current value: <span id="settingsScaleValue">42.5</span></div>
+      </div>
+    </section>
+    <section class="settings-section">
+      <h2>Interaction</h2>
+      <div class="setting-row">Preferred hand
+        <small>Adjusts the edge gesture zones for easier one-handed use.</small>
+        <select id="handSelect">
+          <option value="center">Center · Default</option>
+          <option value="left">Left-handed</option>
+          <option value="right">Right-handed</option>
+        </select>
+      </div>
+    </section>
+  </div>
+</section>
+
+<div class="status" id="status">Loading gesture library…</div>
+
+<script type="module">
+import { DragGesture } from 'https://esm.sh/@use-gesture/vanilla@10.3.1';
+
+const $ = selector => document.querySelector(selector);
+const scrim = $('#scrim');
+const status = $('#status');
+const panels = {
+  left:$('#leftDrawer'),
+  jump:$('#jumpDrawer'),
+  options:$('#optionsDrawer'),
+  settings:$('#settingsPage')
+};
+const edges = {left:$('#leftEdge'),right:$('#rightEdge')};
+
+let openPanel = null;
+let previousPanel = null;
+let currentPage = 'mein';
+const gestures = [];
+
+/* Sample header data.
+   Replace this function's values with live calendar and zmanim data later. */
+function getSiddurHeaderData() {
+  return {
+    hebrewDate: 'י״ז בכסלו תשפ״ז',
+    nextZman: 'סוף זמן קריאת שמע · 9:08 AM',
+    weeklyParsha: 'פרשת וישב'
+  };
+}
+
+function renderSiddurHeader() {
+  const data = getSiddurHeaderData();
+  $('#hebrewDate').textContent = data.hebrewDate;
+  $('#nextZman').textContent = data.nextZman;
+  $('#weeklyParsha').textContent = data.weeklyParsha;
+}
+
+function panelWidth(name) {
+  return panels[name].getBoundingClientRect().width;
+}
+
+function closedX(name) {
+  return name === 'left' ? -panelWidth(name) : panelWidth(name);
+}
+
+function setX(name,x) {
+  const w = panelWidth(name);
+  const bounded = name === 'left'
+    ? Math.max(-w,Math.min(0,x))
+    : Math.max(0,Math.min(w,x));
+
+  panels[name].style.transform = `translate3d(${bounded}px,0,0)`;
+
+  const progress = 1 - Math.abs(bounded) / w;
+  scrim.style.opacity = String(progress * .62);
+  scrim.classList.toggle('visible',progress > .005);
+}
+
+function getCurrentX(name) {
+  const match = panels[name].style.transform.match(/translate3d\(([-\d.]+)px/);
+  return match ? Number(match[1]) : 0;
+}
+
+function settle(name,shouldOpen) {
+  const panel = panels[name];
+  panel.classList.add('animating');
+  panel.style.transform = '';
+
+  if (shouldOpen) {
+    panel.classList.add('is-open');
+    openPanel = name;
+    scrim.classList.add('visible');
+    scrim.style.opacity = '';
+    document.body.style.overflow = 'hidden';
+  } else {
+    panel.classList.remove('is-open');
+    if (openPanel === name) openPanel = null;
+    scrim.classList.remove('visible');
+    scrim.style.opacity = '';
+    if (!openPanel) document.body.style.overflow = '';
+  }
+
+  window.setTimeout(() => panel.classList.remove('animating'),320);
+}
+
+function openPanelView(name) {
+  if (openPanel === name) return;
+  const previous = openPanel;
+  if (previous) settle(previous,false);
+  settle(name,true);
+}
+
+function closePanel() {
+  if (openPanel) settle(openPanel,false);
+}
+
+/* Edge gestures */
+function dragFromEdge(name,state) {
+  if (openPanel && openPanel !== name) return;
+
+  const {movement:[mx],velocity:[vx],direction:[dx],last} = state;
+
+  if (state.first) {
+    panels[name].classList.remove('animating');
+    panels[name].classList.add('gesture-active');
+    setX(name,closedX(name));
+  }
+
+  const x = name === 'left'
+    ? -panelWidth(name) + mx
+    : panelWidth(name) + mx;
+
+  setX(name,x);
+
+  if (last) {
+    const progress = 1 - Math.abs(getCurrentX(name)) / panelWidth(name);
+    const inwardFlick = Math.abs(vx) > .45 &&
+      ((name === 'left' && dx > 0) || (name !== 'left' && dx < 0));
+
+    panels[name].classList.remove('gesture-active');
+    settle(name,progress > .38 || inwardFlick);
+  }
+}
+
+/* Drag to close */
+function dragOnPanel(name,state) {
+  const {movement:[mx],velocity:[vx],direction:[dx],last} = state;
+
+  if (state.first) {
+    panels[name].classList.remove('animating');
+    panels[name].classList.add('gesture-active');
+  }
+
+  setX(name,mx);
+
+  if (last) {
+    const progress = 1 - Math.abs(getCurrentX(name)) / panelWidth(name);
+    const closingFlick = name === 'left' ? dx < 0 : dx > 0;
+    const remain = progress > .62 || (Math.abs(vx) > .45 && !closingFlick);
+
+    panels[name].classList.remove('gesture-active');
+    settle(name,remain);
+  }
+}
+
+/* Gesture setup */
+function attachGestures(leftThreshold = 4,rightThreshold = 4) {
+  gestures.splice(0).forEach(g => g.destroy());
+
+  const config = {
+    axis:'x',
+    filterTaps:true,
+    swipe:{distance:45,velocity:.35,duration:500},
+    pointer:{capture:true}
+  };
+
+  gestures.push(
+    new DragGesture(edges.left,state => dragFromEdge('left',state),
+      {...config,threshold:leftThreshold})
+  );
+
+  // The right edge now opens Options by default, not the Contents list.
+  gestures.push(
+    new DragGesture(edges.right,state => dragFromEdge('options',state),
+      {...config,threshold:rightThreshold})
+  );
+
+  Object.entries(panels).forEach(([name,element]) => {
+    if (name === 'settings') return;
+
+    gestures.push(
+      new DragGesture(element,state => {
+        if (openPanel === name) dragOnPanel(name,state);
+      },config)
+    );
+  });
+}
+
+/* Hand preference controls edge-zone widths. */
+function applyHandPreference(value) {
+  let left = 20;
+  let right = 20;
+  let leftThreshold = 4;
+  let rightThreshold = 4;
+
+  if (value === 'left') {
+    left = 15;
+    right = 25;
+    leftThreshold = 5;
+    rightThreshold = 3;
+  }
+
+  if (value === 'right') {
+    left = 25;
+    right = 15;
+    leftThreshold = 3;
+    rightThreshold = 5;
+  }
+
+  edges.left.style.width = `${left}vw`;
+  edges.right.style.width = `${right}vw`;
+
+  attachGestures(leftThreshold,rightThreshold);
+}
+
+/* Page switching and automatic contents list */
+function rebuildContents() {
+  const page = $(`.reading-page[data-page="${currentPage}"]`);
+  const host = $('#jumpItems');
+  host.replaceChildren();
+
+  const headings = [...page.querySelectorAll('h2')];
+
+  headings.forEach((heading,index) => {
+    if (!heading.id) heading.id = `${currentPage}-section-${index+1}`;
+
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.textContent = heading.textContent;
+
+    item.addEventListener('click',() => {
+      closePanel();
+      heading.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+
+    host.append(item);
+    heading.onclick = () => openPanelView('jump');
+  });
+}
+
+function showPage(pageId) {
+  const page = $(`.reading-page[data-page="${pageId}"]`);
+  if (!page) return;
+
+  currentPage = pageId;
+
+  document.querySelectorAll('.reading-page').forEach(p => {
+    p.hidden = p !== page;
+  });
+
+  $('#pageTitle').textContent = page.dataset.title;
+  $('#pageCategory').textContent = page.dataset.category;
+  $('#pageSubtitle').textContent = page.dataset.subtitle;
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('current',item.dataset.page === pageId);
+  });
+
+  rebuildContents();
+  closePanel();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click',() => showPage(item.dataset.page));
+});
+
+/* Shared text scaling */
+function applyTextScale(value) {
+  const n = Number(value);
+
+  const multiplier = n <= 42.5
+    ? .65 + ((n - 10) / 32.5) * .35
+    : 1 + ((n - 42.5) / 32.5) * 1.8;
+
+  document.documentElement.style.fontSize = `${16 * multiplier}px`;
+  document.documentElement.classList.toggle('large-text',n >= 55);
+
+  $('#optionsScale').value = n;
+  $('#settingsScale').value = n;
+  $('#optionsScaleValue').textContent = n;
+  $('#settingsScaleValue').textContent = n;
+}
+
+$('#optionsScale').addEventListener('input',e => applyTextScale(e.target.value));
+$('#settingsScale').addEventListener('input',e => applyTextScale(e.target.value));
+
+/* Themes */
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  $('#themeSelect').value = theme;
+  document.querySelector('meta[name="color-scheme"]').content =
+    theme.includes('light') ? 'light' : 'dark';
+}
+
+$('#themeSelect').addEventListener('change',e => applyTheme(e.target.value));
+
+/* Drawer and settings navigation */
+$('#pageOptionsButton').addEventListener('click',() => openPanelView('options'));
+$('#jumpButton').addEventListener('click',() => openPanelView('jump'));
+
+$('#optionsSettingsButton').addEventListener('click',() => {
+  previousPanel = 'options';
+  openPanelView('settings');
+});
+
+$('#leftSettingsButton').addEventListener('click',() => {
+  previousPanel = 'left';
+  openPanelView('settings');
+});
+
+$('#settingsBack').addEventListener('click',() => {
+  openPanelView(previousPanel === 'left' ? 'left' : 'options');
+});
+
+/* Close controls */
+document.querySelectorAll('.close').forEach(button => {
+  button.addEventListener('click',closePanel);
+});
+
+scrim.addEventListener('click',closePanel);
+
+document.addEventListener('keydown',e => {
+  if (e.key === 'Escape') closePanel();
+});
+
+/* Prevent drawer controls from triggering drag-to-close. */
+document.querySelectorAll(
+  '.drawer input,.drawer button,.drawer select,.drawer textarea'
+).forEach(control => {
+  control.addEventListener('pointerdown',e => e.stopPropagation());
+});
+
+/* Initialize */
+renderSiddurHeader();
+applyTextScale(42.5);
+applyTheme('dark');
+applyHandPreference('center');
+showPage('mein');
+
+status.textContent = 'Ready · swipe inward from either edge';
+window.setTimeout(() => status.style.opacity = '.35',4500);
+
+window.addEventListener('beforeunload',() => {
+  gestures.forEach(g => g.destroy());
+});
+</script>
+</body>
+</html>
