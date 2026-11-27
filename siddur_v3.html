@@ -58,7 +58,34 @@ html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
 .drawer-head small{display:block;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:4px;overflow-wrap:anywhere}
 .close,.back-button{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;text-align:center;line-height:1;appearance:none;font-family:Arial,sans-serif}
 .close{font-size:23px}
-.drawer-content{--drawer-top-inset:42vh;padding:var(--drawer-top-inset) 16px max(45vh,calc(env(safe-area-inset-bottom) + 16px));overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-gutter:stable;flex:1;min-width:0;overflow-wrap:anywhere}
+.drawer-content{
+  --drawer-top-inset:42vh;
+  padding:var(--drawer-top-inset) 16px max(45vh,calc(env(safe-area-inset-bottom) + 16px));
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior-y:auto;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  scrollbar-gutter:stable;
+  flex:1 1 0;
+  min-width:0;
+  min-height:0;
+  overflow-wrap:anywhere;
+}
+
+.drawer-foot{
+  position:relative;
+  z-index:2;
+  flex:0 0 auto;
+  border-top:1px solid var(--line);
+  padding:12px 16px;
+  background:var(--surface);
+  color:var(--muted);
+  font:.72rem system-ui,sans-serif;
+  overflow-wrap:anywhere;
+}
+  
+
 .item{padding:12px;border-radius:9px;margin:3px 0;font:.9rem system-ui,sans-serif;cursor:pointer;overflow-wrap:anywhere}
 .nav-item{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .nav-item::after{content:"›";font:1.35rem/1 Arial,sans-serif;color:var(--muted);opacity:.65}
@@ -66,7 +93,7 @@ html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
 .item.current{background:var(--selected);color:var(--accent)}
 .nav-group{margin:0 0 18px}
 .nav-group-title{padding:8px 12px 4px;color:var(--muted);font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
-.drawer-foot{border-top:1px solid var(--line);padding:12px 16px;color:var(--muted);font:.72rem system-ui,sans-serif;flex-shrink:0;overflow-wrap:anywhere}
+
 .drawer-foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .drawer-foot-row .settings-link{width:auto;flex:1}
 .footer-button{border:0;background:transparent;padding:8px 0;color:var(--text);font:.85rem system-ui,sans-serif;text-align:left}
@@ -440,28 +467,94 @@ function dragFromEdge(name,state) {
   }
 }
 
-function dragOnPanel(name,state) {
-  const {movement:[mx],velocity:[vx],direction:[dx],last} = state;
+const panelPointers = new Map();
 
-  if (state.first) {
-    panelDragStartX = getCurrentX(name);
+function installPanelDrag(name,element) {
+  element.addEventListener('pointerdown',event => {
+    if (event.button !== 0 || openPanel !== name) return;
 
-    panels[name].classList.remove('animating');
-    panels[name].classList.add('gesture-active');
-  }
+    // Never start a drawer drag from a control.
+    if (event.target.closest(
+      'button,input,select,textarea,a,[role="button"]'
+    )) return;
 
-  setX(name,panelDragStartX + mx);
+    panelPointers.set(name,{
+      id:event.pointerId,
+      startX:event.clientX,
+      startY:event.clientY,
+      lastX:event.clientX,
+      lastTime:performance.now(),
+      velocity:0,
+      initialX:0,
+      active:false,
+      rejected:false
+    });
+  });
 
-  if (last) {
-    const progress = 1 - Math.abs(getCurrentX(name)) / panelWidth(name);
-    const closingFlick = name === 'left' ? dx < 0 : dx > 0;
-    const remain = progress > .62 || (Math.abs(vx) > .45 && !closingFlick);
+  element.addEventListener('pointermove',event => {
+    const drag = panelPointers.get(name);
+    if (!drag || drag.id !== event.pointerId) return;
 
-    panels[name].classList.remove('gesture-active');
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+
+    if (!drag.active && !drag.rejected) {
+      if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return;
+
+      // Preserve ordinary vertical scrolling.
+      if (Math.abs(dy) > Math.abs(dx)) {
+        drag.rejected = true;
+        return;
+      }
+
+      drag.active = true;
+      drag.initialX = getCurrentX(name);
+
+      element.classList.remove('animating');
+      element.classList.add('gesture-active');
+    }
+
+    if (!drag.active) return;
+
+    const now = performance.now();
+    const elapsed = Math.max(1,now - drag.lastTime);
+
+    drag.velocity = (event.clientX - drag.lastX) / elapsed;
+    drag.lastX = event.clientX;
+    drag.lastTime = now;
+
+    setX(name,drag.initialX + dx);
+  });
+
+  function finish(event) {
+    const drag = panelPointers.get(name);
+    if (!drag || drag.id !== event.pointerId) return;
+
+    panelPointers.delete(name);
+
+    if (!drag.active) return;
+
+    const progress = 1 -
+      Math.abs(getCurrentX(name)) / panelWidth(name);
+
+    const closingFlick = name === 'left'
+      ? drag.velocity < -.45
+      : drag.velocity > .45;
+
+    const remain = progress > .62 ||
+      (Math.abs(drag.velocity) > .45 && !closingFlick);
+
+    element.classList.remove('gesture-active');
     settle(name,remain);
   }
+
+  element.addEventListener('pointerup',finish);
+  element.addEventListener('pointercancel',finish);
 }
 
+Object.entries(panels).forEach(([name,element]) => {
+  if (name !== 'settings') installPanelDrag(name,element);
+});
 /* Gesture setup */
 function attachGestures(leftThreshold = 4,rightThreshold = 4) {
   gestures.splice(0).forEach(g => g.destroy());
@@ -484,15 +577,7 @@ function attachGestures(leftThreshold = 4,rightThreshold = 4) {
       {...config,threshold:rightThreshold})
   );
 
-  Object.entries(panels).forEach(([name,element]) => {
-    if (name === 'settings') return;
 
-    gestures.push(
-      new DragGesture(element,state => {
-        if (openPanel === name) dragOnPanel(name,state);
-      },config)
-    );
-  });
 }
 
 function applyHandPreference(value) {
@@ -629,20 +714,7 @@ function openSettings(fromPanel) {
   window.setTimeout(() => settings.classList.remove('animating'),320);
 }
 
-/* Delegated click handling means both Settings buttons work independently
-   of the gesture library and of their nested icon/text elements. */
-document.addEventListener('click',event => {
-  const leftSettings = event.target.closest('#leftSettingsButton');
-  const optionsSettings = event.target.closest('#optionsSettingsButton');
 
-  if (leftSettings) {
-    event.preventDefault();
-    openSettings('left');
-  } else if (optionsSettings) {
-    event.preventDefault();
-    openSettings('options');
-  }
-});
 
 $('#settingsBack').addEventListener('click',() => {
   const destination = previousPanel === 'left' ? 'left' : 'options';
@@ -669,12 +741,7 @@ document.addEventListener('keydown',e => {
   if (e.key === 'Escape') closePanel();
 });
 
-/* Protect interactive controls from drawer drag gestures. */
-document.querySelectorAll(
-  '.drawer input,.drawer button,.drawer select,.drawer textarea'
-).forEach(control => {
-  control.addEventListener('pointerdown',e => e.stopPropagation());
-});
+
 
 /* Initialize */
 renderSiddurHeader();
