@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Siddur — Interaction Demo</title>
@@ -17,7 +17,8 @@ html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
 body{font:1rem/1.65 Georgia,"Times New Roman",serif;transition:background .2s,color .2s}
 button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
-main{width:min(100%,720px);margin:auto;padding:clamp(24px,6vw,56px) clamp(22px,6vw,48px) 120px}
+
+main{width:min(100%,720px);margin:auto;padding:calc(clamp(24px,6vw,56px) + env(safe-area-inset-top)) calc(clamp(22px,6vw,48px) + env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) calc(clamp(22px,6vw,48px) + env(safe-area-inset-left))}
 .reading-title-row{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:1.2rem}
 .reading-title-row h1{flex:1;min-width:0;font-size:2.2rem;font-weight:400;line-height:1.15;margin:0;overflow-wrap:anywhere}
 .title-control{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--surface);font:1.3rem/1 Arial,sans-serif}
@@ -33,9 +34,9 @@ p{margin:.8rem 0}
 .reading-page[hidden]{display:none!important}
 
 /* Edge gestures */
-.edge{position:fixed;z-index:8;top:0;bottom:0;width:20vw;background:transparent;touch-action:pan-y;cursor:ew-resize}
-.edge.left{left:0}
-.edge.right{right:0}
+.edge{position:fixed;z-index:8;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom);width:20vw;background:transparent;touch-action:pan-y;cursor:ew-resize}
+.edge.left{left:env(safe-area-inset-left)}
+.edge.right{right:env(safe-area-inset-right)}
 .edge::after{content:"";position:absolute;top:45%;height:76px;width:4px;border-radius:4px;background:var(--muted);opacity:.25}
 .edge.left::after{left:3px}
 .edge.right::after{right:3px}
@@ -43,20 +44,23 @@ p{margin:.8rem 0}
 /* Drawers */
 .scrim{position:fixed;z-index:10;inset:0;background:var(--scrim);opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--duration) var(--ease),visibility var(--duration)}
 .scrim.visible{opacity:1;visibility:visible;pointer-events:auto}
-.drawer{position:fixed;z-index:11;top:0;bottom:0;width:min(65vw,420px);background:var(--surface);color:var(--text);display:flex;flex-direction:column;box-shadow:0 15px 60px #0009;will-change:transform;touch-action:pan-y;overscroll-behavior:contain;border-color:var(--line);overflow:hidden}
-.drawer.left{left:0;width:min(86vw,350px);transform:translate3d(-101%,0,0);border-right:1px solid var(--line)}
-.drawer.right{right:0;transform:translate3d(101%,0,0);border-left:1px solid var(--line)}
+.drawer{position:fixed;z-index:11;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom);width:min(65vw,420px);background:var(--surface);color:var(--text);display:flex;flex-direction:column;box-shadow:0 15px 60px #0009;will-change:transform;touch-action:pan-y;overscroll-behavior:contain;border-color:var(--line);overflow:hidden}
+.drawer.left{left:env(safe-area-inset-left);width:min(86vw,350px);transform:translate3d(-101%,0,0);border-right:1px solid var(--line)}
+.drawer.right{right:env(safe-area-inset-right);transform:translate3d(101%,0,0);border-left:1px solid var(--line)}
 .drawer.is-open{transform:translate3d(0,0,0)}
 .drawer.animating{transition:transform var(--duration) var(--ease)}
 .drawer.gesture-active{transition:none}
 html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
+
 .drawer-head{min-height:76px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);font:600 .9rem/1.4 system-ui,sans-serif;letter-spacing:.02em;flex-shrink:0;min-width:0}
 .drawer-head>div{flex:1;min-width:0;overflow-wrap:anywhere;white-space:normal}
 .drawer-head small{display:block;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:4px;overflow-wrap:anywhere}
 .close,.back-button{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:transparent;text-align:center;line-height:1;appearance:none;font-family:Arial,sans-serif}
 .close{font-size:23px}
-.drawer-content{padding:16px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1;min-width:0;overflow-wrap:anywhere}
+.drawer-content{padding:16px 16px max(45vh,calc(env(safe-area-inset-bottom) + 16px));overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-gutter:stable;flex:1;min-width:0;overflow-wrap:anywhere}
 .item{padding:12px;border-radius:9px;margin:3px 0;font:.9rem system-ui,sans-serif;cursor:pointer;overflow-wrap:anywhere}
+.nav-item{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.nav-item::after{content:"›";font:1.35rem/1 Arial,sans-serif;color:var(--muted);opacity:.65}
 .item:hover{background:var(--raised)}
 .item.current{background:var(--selected);color:var(--accent)}
 .nav-group{margin:0 0 18px}
@@ -64,16 +68,15 @@ html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
 .drawer-foot{border-top:1px solid var(--line);padding:12px 16px;color:var(--muted);font:.72rem system-ui,sans-serif;flex-shrink:0;overflow-wrap:anywhere}
 .drawer-foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .drawer-foot-row .settings-link{width:auto;flex:1}
+.footer-button{border:0;background:transparent;padding:8px 0;color:var(--text);font:.85rem system-ui,sans-serif;text-align:left}
 .app-version{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* Left drawer header */
+/* Drawer content */
 .header-info{position:relative;padding:30px 18px 18px;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif;flex-shrink:0}
 .header-info .close{position:absolute;top:12px;right:12px}
 .hebrew-date{font-size:1.35rem;font-weight:650;line-height:1.35;padding:28px 52px 8px 0;overflow-wrap:anywhere}
 .header-next-zman{font-size:.82rem;color:var(--muted);line-height:1.45}
 .header-parsha{font-size:.82rem;color:var(--muted);margin-top:5px;line-height:1.45}
-
-/* Options drawer */
 .drawer-section-title{margin:2px 0 12px;color:var(--muted);font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
 .options-section{padding:0 0 22px;margin:0 0 20px;border-bottom:1px solid var(--line)}
 .options-section:last-child{border-bottom:0}
@@ -90,17 +93,22 @@ html.large-text .drawer{width:calc(100vw - 40px);max-width:none}
 .scale-value{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:600}
 input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent)}
 .range-labels{display:flex;justify-content:space-between;gap:6px;color:var(--muted);font-size:.72rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font:.86rem system-ui,sans-serif;padding:10px 0}
+.toggle-row input{width:20px;height:20px;accent-color:var(--accent)}
 .settings-link{display:flex;align-items:center;gap:12px;width:100%;padding:15px 14px;border:1px solid var(--line);border-radius:10px;background:var(--raised);font:.9rem system-ui,sans-serif;text-align:left}
-.settings-link .gear{font-size:1.2rem;line-height:1}
+.settings-link .gear{font-size:1.3rem;line-height:1}
+.settings-link .settings-arrow{display:none}
+.settings-link.icon-only-label{gap:12px}
+.drawer-foot.options-foot{padding:0}
 
 /* Settings */
-.settings-page{position:fixed;z-index:12;inset:0;width:100%;height:100%;background:var(--bg);color:var(--text);display:flex;flex-direction:column;transform:translate3d(101%,0,0);box-shadow:0 0 60px #0008;touch-action:pan-y;overscroll-behavior:contain;overflow:hidden}
+.settings-page{position:fixed;z-index:12;inset:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);width:auto;height:auto;background:var(--bg);color:var(--text);display:flex;flex-direction:column;transform:translate3d(101%,0,0);box-shadow:0 0 60px #0008;touch-action:pan-y;overscroll-behavior:contain;overflow:hidden}
 .settings-page.is-open{transform:translate3d(0,0,0)}
 .settings-page.animating{transition:transform var(--duration) var(--ease)}
 .settings-header{min-height:76px;display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0}
 .back-button{font-size:25px}
 .settings-title{font:600 1rem system-ui,sans-serif}
-.settings-content{width:min(100%,760px);margin:0 auto;padding:22px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
+.settings-content{width:min(100%,760px);margin:0 auto;padding:22px max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
 .settings-section{margin-bottom:30px;min-width:0}
 .settings-section h2{font:600 .8rem system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;padding:0;cursor:default}
 .settings-section h2::after{content:none}
@@ -160,26 +168,29 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
 <aside class="drawer left" id="leftDrawer" aria-label="App navigation">
   <div class="header-info" id="siddurHeaderInfo">
     <button class="close" aria-label="Close navigation">×</button>
-    <div class="hebrew-date" id="hebrewDate">י״ז בכסלו תשפ״ז</div>
-    <div class="header-next-zman" id="nextZman">סוף זמן קריאת שמע · 9:08 AM</div>
+    <div class="hebrew-date" id="hebrewDate">17th Nissan, 5778</div>
+    <div class="header-next-zman" id="nextZman">9:08 AM · סוף זמן קריאת שמע</div>
     <div class="header-parsha" id="weeklyParsha">פרשת וישב</div>
   </div>
   <div class="drawer-content">
     <div class="nav-group"><div class="nav-group-title">Prayers</div>
-      <div class="item nav-item" data-page="shacharis">Shacharis</div><div class="item nav-item" data-page="mincha">Mincha</div><div class="item nav-item" data-page="maariv">Maariv</div>
+      <div class="item nav-item" data-page="shacharis">Shacharis</div>
+      <div class="item nav-item" data-page="mincha">Mincha</div>
+      <div class="item nav-item" data-page="maariv">Maariv</div>
     </div>
     <div class="nav-group"><div class="nav-group-title">Food blessings</div>
-      <div class="item nav-item" data-page="birkat">Birchas Ha’mazon</div><div class="item nav-item" data-page="mein">Me’in Ha’shalosh</div>
+      <div class="item nav-item" data-page="birkat">Birchas Ha’mazon</div>
+      <div class="item nav-item" data-page="mein">Me’in Ha’shalosh</div>
     </div>
     <div class="nav-group"><div class="nav-group-title">Occasional prayers</div>
-      <div class="item nav-item" data-page="derech">Tefilas Ha’derech</div><div class="item nav-item" data-page="levanah">Kiddush Levanah</div>
+      <div class="item nav-item" data-page="derech">Tefilas Ha’derech</div>
+      <div class="item nav-item" data-page="levanah">Kiddush Levanah</div>
     </div>
   </div>
   <div class="drawer-foot">
-    <div class="drawer-foot-row">
-      <button class="settings-link" id="leftSettingsButton"><span class="gear" aria-hidden="true">⚙</span> Settings <span aria-hidden="true">→</span></button>
-      <span class="app-version">Version 0.1.0</span>
-    </div>
+    <button class="settings-link" id="leftSettingsButton" type="button">
+      <span class="gear" aria-hidden="true">⚙</span> Settings
+    </button>
   </div>
 </aside>
 
@@ -214,7 +225,6 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
       <p class="section-description">Determined from the Hebrew calendar. A manual override can be added here.</p>
       <div class="option-row"><label for="holidaySelect">Holiday</label><select id="holidaySelect"><option>Automatic</option><option>Regular day</option><option>Shabbat</option><option>Yom Tov</option><option>Other holiday</option></select></div>
     </section>
-
     <div class="drawer-section-title">Text preferences</div>
     <section class="options-section">
       <div class="preference-group">
@@ -224,7 +234,6 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
         <div class="preference-description">Changes the reading text and interface size.</div>
       </div>
     </section>
-
     <div class="drawer-section-title">Occasional options</div>
     <section class="options-section">
       <div class="section-kicker">This page · occasional</div>
@@ -233,8 +242,9 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
       <div class="option-row"><label for="optionalNa">Optional “na”</label><input id="optionalNa" type="checkbox"></div>
       <div class="option-row"><label for="conjunctions">Additional conjunctions</label><input id="conjunctions" type="checkbox"></div>
     </section>
-
-    <button class="settings-link" id="optionsSettingsButton"><span class="gear" aria-hidden="true">⚙</span> Settings <span aria-hidden="true">→</span></button>
+    <button class="settings-link" id="optionsSettingsButton" type="button">
+      <span class="gear" aria-hidden="true">⚙</span> Settings
+    </button>
   </div>
 </aside>
 
@@ -273,13 +283,23 @@ input[type=range]{display:block;width:100%;min-width:0;accent-color:var(--accent
         </select>
       </div>
     </section>
+    <section class="settings-section">
+      <h2>About</h2>
+      <div class="setting-row">App version<small>0.1.0</small></div>
+    </section>
   </div>
 </section>
 
 <div class="status" id="status">Loading gesture library…</div>
 
 <script type="module">
-import { DragGesture } from 'https://esm.sh/@use-gesture/vanilla@10.3.1';
+/* Load gestures optionally. If the CDN fails, the rest of the app still works. */
+let DragGesture = null;
+try {
+  ({ DragGesture } = await import('https://esm.sh/@use-gesture/vanilla@10.3.1'));
+} catch (error) {
+  console.warn('Gesture library unavailable; click controls remain enabled.', error);
+}
 
 const $ = selector => document.querySelector(selector);
 const scrim = $('#scrim');
@@ -297,12 +317,11 @@ let previousPanel = null;
 let currentPage = 'mein';
 const gestures = [];
 
-/* Sample header data.
-   Replace this function's values with live calendar and zmanim data later. */
+/* Replace this data function with live calendar/location providers later. */
 function getSiddurHeaderData() {
   return {
-    hebrewDate: 'י״ז בכסלו תשפ״ז',
-    nextZman: 'סוף זמן קריאת שמע · 9:08 AM',
+    hebrewDate: '17th Nissan, 5778',
+    nextZman: '9:08 AM · סוף זמן קריאת שמע',
     weeklyParsha: 'פרשת וישב'
   };
 }
@@ -425,6 +444,7 @@ function dragOnPanel(name,state) {
 /* Gesture setup */
 function attachGestures(leftThreshold = 4,rightThreshold = 4) {
   gestures.splice(0).forEach(g => g.destroy());
+  if (!DragGesture) return;
 
   const config = {
     axis:'x',
@@ -438,7 +458,7 @@ function attachGestures(leftThreshold = 4,rightThreshold = 4) {
       {...config,threshold:leftThreshold})
   );
 
-  // The right edge now opens Options by default, not the Contents list.
+  // Right-edge swipe opens Options, not the contents list.
   gestures.push(
     new DragGesture(edges.right,state => dragFromEdge('options',state),
       {...config,threshold:rightThreshold})
@@ -455,7 +475,6 @@ function attachGestures(leftThreshold = 4,rightThreshold = 4) {
   });
 }
 
-/* Hand preference controls edge-zone widths. */
 function applyHandPreference(value) {
   let left = 20;
   let right = 20;
@@ -478,11 +497,10 @@ function applyHandPreference(value) {
 
   edges.left.style.width = `${left}vw`;
   edges.right.style.width = `${right}vw`;
-
   attachGestures(leftThreshold,rightThreshold);
 }
 
-/* Page switching and automatic contents list */
+/* Page switching and contents list */
 function rebuildContents() {
   const page = $(`.reading-page[data-page="${currentPage}"]`);
   const host = $('#jumpItems');
@@ -564,25 +582,53 @@ function applyTheme(theme) {
 
 $('#themeSelect').addEventListener('change',e => applyTheme(e.target.value));
 
-/* Drawer and settings navigation */
+/* Main navigation */
 $('#pageOptionsButton').addEventListener('click',() => openPanelView('options'));
 $('#jumpButton').addEventListener('click',() => openPanelView('jump'));
 
-$('#optionsSettingsButton').addEventListener('click',() => {
-  previousPanel = 'options';
-  openPanelView('settings');
-});
+/* Dedicated settings transition */
+function openSettings(fromPanel) {
+  previousPanel = fromPanel;
 
-$('#leftSettingsButton').addEventListener('click',() => {
-  previousPanel = 'left';
-  openPanelView('settings');
+  if (openPanel && openPanel !== 'settings') {
+    const oldPanel = panels[openPanel];
+    oldPanel.classList.add('animating');
+    oldPanel.classList.remove('is-open');
+    oldPanel.style.transform = '';
+  }
+
+  const settings = panels.settings;
+  settings.style.transform = '';
+  settings.classList.add('animating','is-open');
+  openPanel = 'settings';
+
+  scrim.classList.add('visible');
+  scrim.style.opacity = '';
+  document.body.style.overflow = 'hidden';
+
+  window.setTimeout(() => settings.classList.remove('animating'),320);
+}
+
+/* Delegated click handling means both Settings buttons work independently
+   of the gesture library and of their nested icon/text elements. */
+document.addEventListener('click',event => {
+  const leftSettings = event.target.closest('#leftSettingsButton');
+  const optionsSettings = event.target.closest('#optionsSettingsButton');
+
+  if (leftSettings) {
+    event.preventDefault();
+    openSettings('left');
+  } else if (optionsSettings) {
+    event.preventDefault();
+    openSettings('options');
+  }
 });
 
 $('#settingsBack').addEventListener('click',() => {
-  openPanelView(previousPanel === 'left' ? 'left' : 'options');
+  const destination = previousPanel === 'left' ? 'left' : 'options';
+  openPanelView(destination);
 });
 
-/* Close controls */
 document.querySelectorAll('.close').forEach(button => {
   button.addEventListener('click',closePanel);
 });
@@ -593,7 +639,7 @@ document.addEventListener('keydown',e => {
   if (e.key === 'Escape') closePanel();
 });
 
-/* Prevent drawer controls from triggering drag-to-close. */
+/* Protect interactive controls from drawer drag gestures. */
 document.querySelectorAll(
   '.drawer input,.drawer button,.drawer select,.drawer textarea'
 ).forEach(control => {
