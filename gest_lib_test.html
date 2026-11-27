@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Gesture Lab — Siddur Drawers</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#111315; --surface:#1c2023; --raised:#262b2f; --text:#eeeae2;
+  --muted:#a7a49c; --line:rgba(255,255,255,.13); --accent:#c8a875;
+  --scrim:rgba(0,0,0,.62); --drawer-width:min(86vw,350px);
+  --ease:cubic-bezier(.2,.78,.22,1); --duration:280ms;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+body{font:16px/1.65 Georgia,"Times New Roman",serif}
+button{font:inherit;color:inherit}
+main{width:min(100%,680px);margin:auto;padding:clamp(24px,6vw,56px) clamp(22px,6vw,48px) 120px}
+.eyebrow{font:600 .68rem/1.4 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(2rem,7vw,3rem);font-weight:400;line-height:1.15;margin:.45rem 0 1rem}
+.lede{color:var(--muted);font: .9rem/1.7 system-ui,sans-serif;margin-bottom:2.5rem}
+h2{font-size:1.25rem;font-weight:500;margin:2rem 0 .5rem;color:var(--accent)}
+p{margin:.75rem 0}
+.demo-card{margin:1.5rem 0;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--surface);font: .84rem/1.6 system-ui,sans-serif}
+.demo-card strong{color:var(--accent)}
+.edge{position:fixed;z-index:8;top:0;bottom:0;width:18px;background:transparent;touch-action:pan-y;cursor:ew-resize}
+.edge.left{left:0}.edge.right{right:0}
+.edge::after{content:"";position:absolute;top:45%;height:76px;width:4px;border-radius:4px;background:var(--muted);opacity:.35}
+.edge.left::after{left:3px}.edge.right::after{right:3px}
+.scrim{position:fixed;z-index:10;inset:0;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity var(--duration) var(--ease),visibility var(--duration)}
+.scrim.visible{opacity:1;visibility:visible}
+.drawer{position:fixed;z-index:11;top:0;bottom:0;width:var(--drawer-width);background:var(--surface);display:flex;flex-direction:column;box-shadow:0 15px 60px #0009;will-change:transform;touch-action:pan-y;overscroll-behavior:contain}
+.drawer.left{left:0;transform:translate3d(-101%,0,0);border-right:1px solid var(--line)}
+.drawer.right{right:0;transform:translate3d(101%,0,0);border-left:1px solid var(--line)}
+.drawer.animating{transition:transform var(--duration) var(--ease)}
+.drawer-head{min-height:76px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font:600 .78rem/1.4 system-ui,sans-serif;letter-spacing:.1em}
+.drawer-head small{display:block;color:var(--muted);font-weight:400;letter-spacing:0;margin-top:4px}
+.close{width:36px;height:36px;border:1px solid var(--line);border-radius:50%;background:transparent;font:1.2rem system-ui;cursor:pointer}
+.drawer-content{padding:16px;overflow:auto;overscroll-behavior:contain;flex:1}
+.item{padding:13px 12px;border-radius:9px;margin:3px 0;font: .9rem system-ui,sans-serif}
+.item.current{background:#c8a87520;color:var(--accent)}
+.drawer-foot{border-top:1px solid var(--line);padding:12px 18px;color:var(--muted);font: .7rem system-ui,sans-serif}
+.status{position:fixed;z-index:2;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 12px;border:1px solid var(--line);border-radius:99px;background:#1c2023eF;color:var(--muted);font: .68rem system-ui,sans-serif;white-space:nowrap;pointer-events:none}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Gesture laboratory · prototype</div>
+  <h1>Reading surface</h1>
+  <div class="lede">No header and no visible menu buttons. Drag inward from either screen edge to open a drawer. Drag the drawer back toward its edge to close it. Scroll vertically as usual.</div>
+  <div class="demo-card"><strong>Test these interactions</strong><br>
+    1. Swipe inward from the left edge.<br>
+    2. Swipe inward from the right edge.<br>
+    3. While a drawer is open, drag it toward its edge.<br>
+    4. Try a vertical scroll beginning near either edge.<br>
+    5. Try a short, quick flick versus a slow, short drag.
+  </div>
+  <h2>ברכות השחר</h2>
+  <p>מוֹדֶה אֲנִי לְפָנֶיךָ מֶלֶךְ חַי וְקַיָּם, שֶׁהֶחֱזַרְתָּ בִּי נִשְׁמָתִי בְּחֶמְלָה, רַבָּה אֱמוּנָתֶךָ.</p>
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae justo sed neque facilisis elementum. Praesent at lectus vitae erat consequat aliquet. Donec euismod, nisl eget consectetur sagittis, nisl nunc consequat justo, vitae tincidunt lorem neque a erat.</p>
+  <h2>פסוקי דזמרה</h2>
+  <p>בָּרוּךְ שֶׁאָמַר וְהָיָה הָעוֹלָם, בָּרוּךְ הוּא. בָּרוּךְ עוֹשֶׂה בְרֵאשִׁית, בָּרוּךְ אוֹמֵר וְעוֹשֶׂה.</p>
+  <p>Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus.</p>
+  <h2>שמע ישראל</h2>
+  <p>שְׁמַע יִשְׂרָאֵל יְיָ אֱלֹהֵינוּ יְיָ אֶחָד.</p>
+  <p>Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh.</p>
+  <h2>עמידה</h2>
+  <p>אֲדֹנָי שְׂפָתַי תִּפְתָּח וּפִי יַגִּיד תְּהִלָּתֶךָ.</p>
+  <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; In ac dui quis mi consectetuer l ป. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc.</p>
+  <h2>תחנון</h2>
+  <p>לְךָ יְיָ הַצְּדָקָה וְלָנוּ בֹּשֶׁת הַפָּנִים.</p>
+  <p>Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum.</p>
+  <h2>עלינו לשבח</h2>
+  <p>עָלֵינוּ לְשַׁבֵּחַ לַאֲדוֹן הַכֹּל, לָתֵת גְּדֻלָּה לְיוֹצֵר בְּרֵאשִׁית.</p>
+  <p>Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut eros et nisl sagittis vestibulum.</p>
+</main>
+
+<div class="edge left" id="leftEdge" aria-label="Swipe from left edge to open app navigation"></div>
+<div class="edge right" id="rightEdge" aria-label="Swipe from right edge to open contextual panel"></div>
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer left" id="leftDrawer" aria-label="App navigation">
+  <div class="drawer-head"><div>APP NAVIGATION<small>Move between prayer collections</small></div><button class="close" aria-label="Close">×</button></div>
+  <div class="drawer-content">
+    <div class="item current">Daily prayers</div><div class="item">Shabbat prayers</div><div class="item">Festival prayers</div><div class="item">Blessings</div><div class="item">Special occasions</div>
+  </div>
+  <div class="drawer-foot">LEFT DRAWER · APPLICATION-LEVEL NAVIGATION</div>
+</aside>
+<aside class="drawer right" id="rightDrawer" aria-label="Contextual panel">
+  <div class="drawer-head"><div>ON THIS PAGE<small>Jump to a section</small></div><button class="close" aria-label="Close">×</button></div>
+  <div class="drawer-content">
+    <div class="item">01 · ברכות השחר</div><div class="item">02 · פסוקי דזמרה</div><div class="item">03 · שמע ישראל</div><div class="item">04 · עמידה</div><div class="item">05 · תחנון</div><div class="item">06 · עלינו לשבח</div>
+    <div class="demo-card">This is deliberately a second, different drawer. Later it can be replaced by section-specific actions, settings, or other contextual tools.</div>
+  </div>
+  <div class="drawer-foot">RIGHT DRAWER · CONTEXTUAL CONTENT</div>
+</aside>
+<div class="status" id="status">Loading gesture library…</div>
+
+<script type="module">
+import { DragGesture } from 'https://esm.sh/@use-gesture/vanilla@10.3.1';
+
+const scrim = document.querySelector('#scrim');
+const drawers = {
+  left: document.querySelector('#leftDrawer'),
+  right: document.querySelector('#rightDrawer')
+};
+const edges = {
+  left: document.querySelector('#leftEdge'),
+  right: document.querySelector('#rightEdge')
+};
+const status = document.querySelector('#status');
+let openSide = null;
+
+function width(side) { return drawers[side].getBoundingClientRect().width; }
+function closedX(side) { return side === 'left' ? -width(side) : width(side); }
+function setX(side, x) {
+  const w = width(side);
+  const bounded = side === 'left' ? Math.max(-w, Math.min(0, x)) : Math.max(0, Math.min(w, x));
+  drawers[side].style.transform = `translate3d(${bounded}px,0,0)`;
+  const progress = 1 - Math.abs(bounded) / w;
+  scrim.style.opacity = String(progress * .62);
+  scrim.classList.toggle('visible', progress > .005);
+}
+function settle(side, shouldOpen) {
+  const drawer = drawers[side];
+  drawer.classList.add('animating');
+  drawer.style.transform = '';
+  if (shouldOpen) {
+    drawer.classList.add('is-open');
+    openSide = side;
+    scrim.classList.add('visible');
+    scrim.style.opacity = '';
+    document.body.style.overflow = 'hidden';
+  } else {
+    drawer.classList.remove('is-open');
+    openSide = null;
+    scrim.classList.remove('visible');
+    scrim.style.opacity = '';
+    document.body.style.overflow = '';
+  }
+  window.setTimeout(() => drawer.classList.remove('animating'), 320);
+}
+function currentX(side) {
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(drawers[side]).transform);
+  return matrix.m41;
+}
+function startFromEdge(side) {
+  if (openSide && openSide !== side) settle(openSide, false);
+  if (openSide === side) return;
+  drawers[side].classList.remove('animating');
+  drawers[side].classList.add('gesture-active');
+  setX(side, closedX(side));
+}
+function dragFromEdge(side, state) {
+  if (openSide && openSide !== side) return;
+  const { active, movement: [mx], velocity: [vx], direction: [dx], last } = state;
+  if (state.first) startFromEdge(side);
+  const x = side === 'left' ? -width(side) + mx : width(side) + mx;
+  setX(side, x);
+  if (last) {
+    const progress = 1 - Math.abs(currentX(side)) / width(side);
+    const openingVelocity = side === 'left' ? vx * dx > 0 : vx * dx > 0;
+    const shouldOpen = progress > .38 || (Math.abs(vx) > .45 && ((side === 'left' && dx > 0) || (side === 'right' && dx < 0)));
+    drawers[side].classList.remove('gesture-active');
+    settle(side, shouldOpen);
+  }
+}
+function dragOnDrawer(side, state) {
+  const { movement: [mx], velocity: [vx], direction: [dx], last } = state;
+  if (state.first) {
+    drawers[side].classList.remove('animating');
+    drawers[side].classList.add('gesture-active');
+  }
+  const start = side === 'left' ? 0 : 0;
+  const x = start + mx;
+  setX(side, x);
+  if (last) {
+    const progress = 1 - Math.abs(currentX(side)) / width(side);
+    const closingFlick = side === 'left' ? dx < 0 : dx > 0;
+    const shouldRemainOpen = progress > .62 || (Math.abs(vx) > .45 && !closingFlick);
+    drawers[side].classList.remove('gesture-active');
+    settle(side, shouldRemainOpen);
+  }
+}
+
+const config = {
+  axis: 'x',
+  filterTaps: true,
+  threshold: 4,
+  swipe: { distance: 45, velocity: .35, duration: 500 },
+  pointer: { capture: true }
+};
+
+// Edge-only gestures open drawers. Axis locking lets vertical page scrolling win.
+const edgeGestures = Object.entries(edges).map(([side, el]) =>
+  new DragGesture(el, state => dragFromEdge(side, state), config)
+);
+// Once open, the drawer itself can be dragged back toward its edge.
+const drawerGestures = Object.entries(drawers).map(([side, el]) =>
+  new DragGesture(el, state => {
+    if (openSide === side || el.classList.contains('gesture-active')) dragOnDrawer(side, state);
+  }, config)
+);
+
+document.querySelectorAll('.close').forEach(button => button.addEventListener('click', () => {
+  if (openSide) settle(openSide, false);
+}));
+scrim.addEventListener('click', () => { if (openSide) settle(openSide, false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && openSide) settle(openSide, false); });
+
+status.textContent = 'Gesture library loaded · swipe from either edge';
+setTimeout(() => status.style.opacity = '.35', 4500);
+window.addEventListener('beforeunload', () => {
+  [...edgeGestures, ...drawerGestures].forEach(g => g.destroy());
+});
+</script>
+</body>
+</html>
