@@ -13,10 +13,8 @@
    ========================================================= */
 
 :root {
-  --drawer-width: min(65vw, 420px);
   --ease: cubic-bezier(.2,.78,.22,1);
   --duration: 280ms;
-  --accent: #c8a875;
 }
 
 html[data-theme="dark"] {
@@ -75,7 +73,9 @@ html[data-theme="contrast-light"] {
    GLOBAL
    ========================================================= */
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 html, body {
   margin: 0;
@@ -94,7 +94,9 @@ button, select, input {
   color: inherit;
 }
 
-button { cursor: pointer; }
+button {
+  cursor: pointer;
+}
 
 main {
   width: min(100%, 720px);
@@ -131,9 +133,9 @@ h2 {
   color: var(--accent);
   cursor: pointer;
   scroll-margin-top: 24px;
+  overflow-wrap: anywhere;
 }
 
-/* Section arrow */
 h2::after {
   content: "›";
   position: absolute;
@@ -151,7 +153,9 @@ h2:hover::after {
   transform: translate(3px,-50%);
 }
 
-p { margin: .8rem 0; }
+p {
+  margin: .8rem 0;
+}
 
 .demo-card {
   margin: 1.5rem 0;
@@ -160,9 +164,12 @@ p { margin: .8rem 0; }
   border-radius: 12px;
   background: var(--surface);
   font: .84rem/1.6 system-ui, sans-serif;
+  overflow-wrap: anywhere;
 }
 
-.demo-card strong { color: var(--accent); }
+.demo-card strong {
+  color: var(--accent);
+}
 
 /* =========================================================
    EDGE GESTURES
@@ -173,14 +180,19 @@ p { margin: .8rem 0; }
   z-index: 8;
   top: 0;
   bottom: 0;
-  width: 20px;
+  width: 20vw;
   background: transparent;
   touch-action: pan-y;
   cursor: ew-resize;
 }
 
-.edge.left { left: 0; }
-.edge.right { right: 0; }
+.edge.left {
+  left: 0;
+}
+
+.edge.right {
+  right: 0;
+}
 
 .edge::after {
   content: "";
@@ -193,8 +205,13 @@ p { margin: .8rem 0; }
   opacity: .25;
 }
 
-.edge.left::after { left: 3px; }
-.edge.right::after { right: 3px; }
+.edge.left::after {
+  left: 3px;
+}
+
+.edge.right::after {
+  right: 3px;
+}
 
 /* =========================================================
    OVERLAY / DRAWERS
@@ -207,6 +224,7 @@ p { margin: .8rem 0; }
   background: var(--scrim);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition:
     opacity var(--duration) var(--ease),
     visibility var(--duration);
@@ -215,6 +233,7 @@ p { margin: .8rem 0; }
 .scrim.visible {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .drawer {
@@ -222,7 +241,7 @@ p { margin: .8rem 0; }
   z-index: 11;
   top: 0;
   bottom: 0;
-  width: var(--drawer-width);
+  width: min(65vw, 420px);
   background: var(--surface);
   color: var(--text);
   display: flex;
@@ -232,6 +251,7 @@ p { margin: .8rem 0; }
   touch-action: pan-y;
   overscroll-behavior: contain;
   border-color: var(--line);
+  overflow: hidden;
 }
 
 .drawer.left {
@@ -247,13 +267,26 @@ p { margin: .8rem 0; }
   border-left: 1px solid var(--line);
 }
 
-.drawer.is-open { transform: translate3d(0,0,0); }
+.drawer.is-open {
+  transform: translate3d(0,0,0);
+}
 
 .drawer.animating {
   transition: transform var(--duration) var(--ease);
 }
 
-.drawer.gesture-active { transition: none; }
+.drawer.gesture-active {
+  transition: none;
+}
+
+/* Large-text drawer layout */
+
+html.large-text .drawer {
+  width: calc(100vw - 40px);
+  max-width: none;
+}
+
+/* Drawer heading */
 
 .drawer-head {
   min-height: 76px;
@@ -261,9 +294,19 @@ p { margin: .8rem 0; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid var(--line);
   font: 600 .78rem/1.4 system-ui, sans-serif;
-  letter-spacing: .1em;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.drawer-head > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .drawer-head small {
@@ -272,23 +315,40 @@ p { margin: .8rem 0; }
   font-weight: 400;
   letter-spacing: 0;
   margin-top: 4px;
+  overflow-wrap: anywhere;
 }
 
-.close {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
+/* Fixed-size navigation controls */
+
+.close,
+.back-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: transparent;
-  font: 1.2rem system-ui;
+  text-align: center;
+  line-height: 1;
+  appearance: none;
+  font-family: Arial, sans-serif;
+}
+
+.close {
+  font-size: 23px;
 }
 
 .drawer-content {
   padding: 16px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .item {
@@ -297,9 +357,12 @@ p { margin: .8rem 0; }
   margin: 3px 0;
   font: .9rem system-ui, sans-serif;
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
-.item:hover { background: var(--raised); }
+.item:hover {
+  background: var(--raised);
+}
 
 .item.current {
   background: var(--selected);
@@ -311,6 +374,8 @@ p { margin: .8rem 0; }
   padding: 12px 18px;
   color: var(--muted);
   font: .7rem system-ui, sans-serif;
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -320,12 +385,14 @@ p { margin: .8rem 0; }
 .preference-group {
   margin: 0 0 26px;
   font-family: system-ui, sans-serif;
+  min-width: 0;
 }
 
 .preference-group label {
   display: block;
   font-size: .88rem;
   margin-bottom: 10px;
+  overflow-wrap: anywhere;
 }
 
 .preference-description {
@@ -342,13 +409,16 @@ p { margin: .8rem 0; }
 }
 
 input[type="range"] {
+  display: block;
   width: 100%;
+  min-width: 0;
   accent-color: var(--accent);
 }
 
 .range-labels {
   display: flex;
   justify-content: space-between;
+  gap: 6px;
   color: var(--muted);
   font-size: .72rem;
 }
@@ -363,6 +433,7 @@ input[type="range"] {
   border: 1px solid var(--line);
   border-radius: 9px;
   font: .88rem system-ui, sans-serif;
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -383,6 +454,7 @@ input[type="range"] {
   box-shadow: 0 0 60px #0008;
   touch-action: pan-y;
   overscroll-behavior: contain;
+  overflow: hidden;
 }
 
 .settings-page.is-open {
@@ -401,15 +473,11 @@ input[type="range"] {
   padding: 12px 20px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
+  flex-shrink: 0;
 }
 
 .back-button {
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: transparent;
-  font: 1.5rem system-ui, sans-serif;
+  font-size: 25px;
 }
 
 .settings-title {
@@ -428,11 +496,14 @@ input[type="range"] {
   margin: 0 auto;
   padding: 22px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  min-width: 0;
 }
 
 .settings-section {
   margin-bottom: 30px;
+  min-width: 0;
 }
 
 .settings-section h2 {
@@ -445,12 +516,16 @@ input[type="range"] {
   cursor: default;
 }
 
-.settings-section h2::after { content: none; }
+.settings-section h2::after {
+  content: none;
+}
 
 .setting-row {
   padding: 15px 12px;
   border-bottom: 1px solid var(--line);
   font: .9rem/1.5 system-ui, sans-serif;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .setting-row small {
@@ -463,6 +538,7 @@ input[type="range"] {
 .setting-row select {
   display: block;
   width: 100%;
+  min-width: 0;
   margin-top: 10px;
   padding: 10px;
   background: var(--raised);
@@ -510,6 +586,7 @@ input[type="range"] {
 <main id="readingSurface">
   <div class="eyebrow">Siddur · interaction prototype</div>
   <h1>Daily Prayers</h1>
+
   <div class="lede">
     Swipe inward from either edge to open a drawer.
     Tap a section heading to open the section index.
@@ -547,18 +624,24 @@ input[type="range"] {
   <p>Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc.</p>
 </main>
 
-<!-- Gesture zones -->
+<!-- EDGE GESTURES -->
+
 <div class="edge left" id="leftEdge"></div>
 <div class="edge right" id="rightEdge"></div>
 
 <div class="scrim" id="scrim"></div>
 
 <!-- LEFT: APP NAVIGATION -->
+
 <aside class="drawer left" id="leftDrawer" aria-label="App navigation">
   <div class="drawer-head">
-    <div>APP NAVIGATION<small>Move between prayer collections</small></div>
+    <div>
+      App navigation
+      <small>Move between prayer collections</small>
+    </div>
     <button class="close" aria-label="Close">×</button>
   </div>
+
   <div class="drawer-content">
     <div class="item current">Daily prayers</div>
     <div class="item">Shabbat prayers</div>
@@ -566,46 +649,63 @@ input[type="range"] {
     <div class="item">Blessings</div>
     <div class="item">Special occasions</div>
   </div>
+
   <div class="drawer-foot">APPLICATION NAVIGATION</div>
 </aside>
 
-<!-- RIGHT: AUTOMATIC SECTION INDEX -->
+<!-- RIGHT: SECTION INDEX -->
+
 <aside class="drawer right" id="jumpDrawer" aria-label="Section index">
   <div class="drawer-head">
-    <div>ON THIS PAGE<small>Jump to a section</small></div>
+    <div>
+      On this page
+      <small>Jump to a section</small>
+    </div>
     <button class="close" aria-label="Close">×</button>
   </div>
+
   <div class="drawer-content">
     <div id="jumpItems"></div>
+
     <div class="demo-card">
       Select a section to jump directly to it.
     </div>
+
     <button class="action-button" id="openPreferences">
       Reading preferences →
     </button>
   </div>
+
   <div class="drawer-foot">SECTION INDEX</div>
 </aside>
 
 <!-- RIGHT: READING PREFERENCES -->
+
 <aside class="drawer right" id="preferencesDrawer" aria-label="Reading preferences">
   <div class="drawer-head">
-    <div>READING PREFERENCES<small>Adjust your reading experience</small></div>
+    <div>
+      Reading preferences
+      <small>Adjust your reading experience</small>
+    </div>
     <button class="close" aria-label="Close">×</button>
   </div>
 
   <div class="drawer-content">
+
     <div class="preference-group">
       <label for="textScale">
         Text size · <span class="scale-value" id="scaleValue">42.5</span>
       </label>
-      <input id="textScale" type="range" min="10" max="75"
-             step=".5" value="42.5">
+
+      <input id="textScale" type="range"
+             min="10" max="75" step=".5" value="42.5">
+
       <div class="range-labels">
         <span>10 · Small</span>
         <span>42.5 · Normal</span>
         <span>75 · Large</span>
       </div>
+
       <div class="preference-description">
         Changes the size of both the reading text and interface.
       </div>
@@ -615,13 +715,17 @@ input[type="range"] {
       All settings →
     </button>
   </div>
+
   <div class="drawer-foot">READING PREFERENCES</div>
 </aside>
 
 <!-- FULL-SCREEN SETTINGS -->
+
 <section class="settings-page" id="settingsPage" aria-label="Settings">
+
   <header class="settings-header">
     <button class="back-button" id="settingsBack" aria-label="Back">‹</button>
+
     <div>
       <div class="settings-title">Settings</div>
       <span class="settings-subtitle">Customize your Siddur</span>
@@ -636,6 +740,7 @@ input[type="range"] {
       <div class="setting-row">
         Theme
         <small>Choose the colors used throughout the app.</small>
+
         <select id="themeSelect">
           <option value="dark">Dark</option>
           <option value="light">Light</option>
@@ -647,9 +752,13 @@ input[type="range"] {
       <div class="setting-row">
         Text size
         <small>Fine-tune the size of reading text and interface.</small>
-        <input id="settingsScale" type="range" min="10" max="75"
-               step=".5" value="42.5">
-        <div>Current value: <span id="settingsScaleValue">42.5</span></div>
+
+        <input id="settingsScale" type="range"
+               min="10" max="75" step=".5" value="42.5">
+
+        <div>
+          Current value: <span id="settingsScaleValue">42.5</span>
+        </div>
       </div>
     </section>
 
@@ -661,6 +770,7 @@ input[type="range"] {
         <small>
           Adjusts the sensitivity and reach of the drawer gestures.
         </small>
+
         <select id="handSelect">
           <option value="center">Center · Default</option>
           <option value="left">Left-handed</option>
@@ -671,33 +781,48 @@ input[type="range"] {
 
     <section class="settings-section">
       <h2>Account</h2>
+
       <div class="setting-row">
         Account details
-        <small class="settings-placeholder">Account management will be added later.</small>
+        <small class="settings-placeholder">
+          Account management will be added later.
+        </small>
       </div>
+
       <div class="setting-row">
         Sign-in and security
-        <small class="settings-placeholder">Not implemented in this prototype.</small>
+        <small class="settings-placeholder">
+          Not implemented in this prototype.
+        </small>
       </div>
     </section>
 
     <section class="settings-section">
       <h2>Notifications</h2>
+
       <div class="setting-row">
         Prayer reminders
-        <small class="settings-placeholder">Notification preferences will go here.</small>
+        <small class="settings-placeholder">
+          Notification preferences will go here.
+        </small>
       </div>
+
       <div class="setting-row">
         Daily notifications
-        <small class="settings-placeholder">Not implemented in this prototype.</small>
+        <small class="settings-placeholder">
+          Not implemented in this prototype.
+        </small>
       </div>
     </section>
 
     <section class="settings-section">
       <h2>About</h2>
+
       <div class="setting-row">
         About this Siddur
-        <small class="settings-placeholder">App information and credits.</small>
+        <small class="settings-placeholder">
+          App information and credits.
+        </small>
       </div>
     </section>
 
@@ -752,15 +877,25 @@ function closedX(name) {
 
 function setX(name, x) {
   const w = width(name);
+
   const bounded = isLeftPanel(name)
     ? Math.max(-w, Math.min(0, x))
     : Math.max(0, Math.min(w, x));
 
-  panels[name].style.transform = `translate3d(${bounded}px,0,0)`;
+  panels[name].style.transform =
+    `translate3d(${bounded}px,0,0)`;
 
   const progress = 1 - Math.abs(bounded) / w;
+
   scrim.style.opacity = String(progress * .62);
   scrim.classList.toggle('visible', progress > .005);
+}
+
+function getCurrentX(name) {
+  const transform = panels[name].style.transform;
+  const match = transform.match(/translate3d\(([-\d.]+)px/);
+
+  return match ? Number(match[1]) : 0;
 }
 
 function settle(name, shouldOpen) {
@@ -772,8 +907,10 @@ function settle(name, shouldOpen) {
   if (shouldOpen) {
     panel.classList.add('is-open');
     openPanel = name;
+
     scrim.classList.add('visible');
     scrim.style.opacity = '';
+
     document.body.style.overflow = 'hidden';
   } else {
     panel.classList.remove('is-open');
@@ -784,6 +921,7 @@ function settle(name, shouldOpen) {
 
     scrim.classList.remove('visible');
     scrim.style.opacity = '';
+
     document.body.style.overflow = '';
   }
 
@@ -805,7 +943,9 @@ function openPanelView(name) {
 }
 
 function closePanel() {
-  if (openPanel) settle(openPanel, false);
+  if (openPanel) {
+    settle(openPanel, false);
+  }
 }
 
 /* =========================================================
@@ -815,11 +955,17 @@ function closePanel() {
 function dragFromEdge(name, state) {
   if (openPanel && openPanel !== name) return;
 
-  const { movement: [mx], velocity: [vx], direction: [dx], last } = state;
+  const {
+    movement: [mx],
+    velocity: [vx],
+    direction: [dx],
+    last
+  } = state;
 
   if (state.first) {
     panels[name].classList.remove('animating');
     panels[name].classList.add('gesture-active');
+
     setX(name, closedX(name));
   }
 
@@ -830,19 +976,20 @@ function dragFromEdge(name, state) {
   setX(name, x);
 
   if (last) {
-    const progress = 1 - Math.abs(
-      Number.parseFloat(
-        panels[name].style.transform.match(/translate3d\(([-\d.]+)/)?.[1] || 0
-      )
-    ) / width(name);
+    const progress =
+      1 - Math.abs(getCurrentX(name)) / width(name);
 
-    const inwardFlick = Math.abs(vx) > .45 &&
-      ((name === 'left' && dx > 0) ||
-       (name === 'jump' && dx < 0));
+    const inwardFlick =
+      Math.abs(vx) > .45 &&
+      (
+        (name === 'left' && dx > 0) ||
+        (name === 'jump' && dx < 0)
+      );
 
     const shouldOpen = progress > .38 || inwardFlick;
 
     panels[name].classList.remove('gesture-active');
+
     settle(name, shouldOpen);
   }
 }
@@ -852,7 +999,12 @@ function dragFromEdge(name, state) {
    ========================================================= */
 
 function dragOnPanel(name, state) {
-  const { movement: [mx], velocity: [vx], direction: [dx], last } = state;
+  const {
+    movement: [mx],
+    velocity: [vx],
+    direction: [dx],
+    last
+  } = state;
 
   if (state.first) {
     panels[name].classList.remove('animating');
@@ -862,19 +1014,18 @@ function dragOnPanel(name, state) {
   setX(name, mx);
 
   if (last) {
-    const w = width(name);
-    const current = Number.parseFloat(
-      panels[name].style.transform.match(/translate3d\(([-\d.]+)/)?.[1] || 0
-    );
+    const progress =
+      1 - Math.abs(getCurrentX(name)) / width(name);
 
-    const progress = 1 - Math.abs(current) / w;
-    const closingFlick = name === 'left' ? dx < 0 : dx > 0;
+    const closingFlick =
+      name === 'left' ? dx < 0 : dx > 0;
 
     const shouldRemainOpen =
       progress > .62 ||
       (Math.abs(vx) > .45 && !closingFlick);
 
     panels[name].classList.remove('gesture-active');
+
     settle(name, shouldRemainOpen);
   }
 }
@@ -888,28 +1039,40 @@ function applyHandPreference(value) {
 
   let leftWidth = 20;
   let rightWidth = 20;
+
   let leftThreshold = 4;
   let rightThreshold = 4;
 
   if (value === 'left') {
-    rightWidth = 30;
     leftWidth = 15;
-    rightThreshold = 3;
+    rightWidth = 25;
+
     leftThreshold = 5;
-  } else if (value === 'right') {
-    leftWidth = 30;
+    rightThreshold = 3;
+  }
+
+  if (value === 'right') {
+    leftWidth = 25;
     rightWidth = 15;
+
     leftThreshold = 3;
     rightThreshold = 5;
   }
 
-  edges.left.style.width = `${leftWidth}px`;
-  edges.right.style.width = `${rightWidth}px`;
+  edges.left.style.width = `${leftWidth}vw`;
+  edges.right.style.width = `${rightWidth}vw`;
 
   attachGestures(leftThreshold, rightThreshold);
 }
 
-function attachGestures(leftThreshold = 4, rightThreshold = 4) {
+/* =========================================================
+   GESTURE INITIALIZATION
+   ========================================================= */
+
+function attachGestures(
+  leftThreshold = 4,
+  rightThreshold = 4
+) {
   gestures.splice(0).forEach(g => g.destroy());
 
   const baseConfig = {
@@ -920,14 +1083,19 @@ function attachGestures(leftThreshold = 4, rightThreshold = 4) {
       velocity: .35,
       duration: 500
     },
-    pointer: { capture: true }
+    pointer: {
+      capture: true
+    }
   };
 
   gestures.push(
     new DragGesture(
       edges.left,
       state => dragFromEdge('left', state),
-      { ...baseConfig, threshold: leftThreshold }
+      {
+        ...baseConfig,
+        threshold: leftThreshold
+      }
     )
   );
 
@@ -935,7 +1103,10 @@ function attachGestures(leftThreshold = 4, rightThreshold = 4) {
     new DragGesture(
       edges.right,
       state => dragFromEdge('jump', state),
-      { ...baseConfig, threshold: rightThreshold }
+      {
+        ...baseConfig,
+        threshold: rightThreshold
+      }
     )
   );
 
@@ -957,22 +1128,41 @@ function attachGestures(leftThreshold = 4, rightThreshold = 4) {
 }
 
 /* =========================================================
+   PROTECT INTERACTIVE CONTROLS FROM DRAWER GESTURES
+   ========================================================= */
+
+document.querySelectorAll(
+  '.drawer input, .drawer button, .drawer select, .drawer textarea'
+).forEach(control => {
+  control.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+  });
+});
+
+/* =========================================================
    AUTOMATIC SECTION INDEX
    ========================================================= */
 
-const headings = [...document.querySelectorAll('#readingSurface h2')];
+const headings = [
+  ...document.querySelectorAll('#readingSurface h2')
+];
+
 const jumpItems = document.querySelector('#jumpItems');
 
 headings.forEach((heading, index) => {
-  if (!heading.id) heading.id = `section-${index + 1}`;
+  if (!heading.id) {
+    heading.id = `section-${index + 1}`;
+  }
 
   const item = document.createElement('div');
+
   item.className = 'item';
   item.textContent =
     `${String(index + 1).padStart(2, '0')} · ${heading.textContent}`;
 
   item.addEventListener('click', () => {
     closePanel();
+
     heading.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
@@ -992,44 +1182,45 @@ headings.forEach((heading, index) => {
 
 const textScale = document.querySelector('#textScale');
 const settingsScale = document.querySelector('#settingsScale');
+
 const scaleValue = document.querySelector('#scaleValue');
-const settingsScaleValue = document.querySelector('#settingsScaleValue');
+const settingsScaleValue =
+  document.querySelector('#settingsScaleValue');
 
 function applyTextScale(value) {
   const n = Number(value);
 
-  /*
-    Slider:
-      10   = 0.65x
-      42.5 = 1.00x
-      75   = 2.80x
-
-    The midpoint is deliberately the normal reading size.
-  */
-
   let multiplier;
 
   if (n <= 42.5) {
-    multiplier = .65 + ((n - 10) / 32.5) * .35;
+    multiplier =
+      .65 + ((n - 10) / 32.5) * .35;
   } else {
-    multiplier = 1 + ((n - 42.5) / 32.5) * 1.8;
+    multiplier =
+      1 + ((n - 42.5) / 32.5) * 1.8;
   }
 
   document.documentElement.style.fontSize =
     `${16 * multiplier}px`;
 
+  document.documentElement.classList.toggle(
+    'large-text',
+    n >= 55
+  );
+
   textScale.value = n;
   settingsScale.value = n;
+
   scaleValue.textContent = n;
   settingsScaleValue.textContent = n;
 }
 
-textScale.addEventListener('input', e => {
-  applyTextScale(e.target.value);
+textScale.addEventListener('input', event => {
+  applyTextScale(event.target.value);
 });
 
-settingsScale.addEventListener('input', e => {
-  applyTextScale(e.target.value);
+settingsScale.addEventListener('input', event => {
+  applyTextScale(event.target.value);
 });
 
 /* =========================================================
@@ -1043,29 +1234,33 @@ function applyTheme(theme) {
   themeSelect.value = theme;
 }
 
-themeSelect.addEventListener('change', e => {
-  applyTheme(e.target.value);
+themeSelect.addEventListener('change', event => {
+  applyTheme(event.target.value);
 });
 
 /* =========================================================
    SETTINGS NAVIGATION
    ========================================================= */
 
-document.querySelector('#openPreferences').addEventListener('click', () => {
-  openPanelView('preferences');
-});
+document.querySelector('#openPreferences')
+  .addEventListener('click', () => {
+    openPanelView('preferences');
+  });
 
-document.querySelector('#openSettings').addEventListener('click', () => {
-  openPanelView('settings');
-});
+document.querySelector('#openSettings')
+  .addEventListener('click', () => {
+    openPanelView('settings');
+  });
 
-document.querySelector('#settingsBack').addEventListener('click', () => {
-  openPanelView('preferences');
-});
+document.querySelector('#settingsBack')
+  .addEventListener('click', () => {
+    openPanelView('preferences');
+  });
 
-document.querySelector('#handSelect').addEventListener('change', e => {
-  applyHandPreference(e.target.value);
-});
+document.querySelector('#handSelect')
+  .addEventListener('change', event => {
+    applyHandPreference(event.target.value);
+  });
 
 /* =========================================================
    CLOSE CONTROLS
@@ -1077,8 +1272,10 @@ document.querySelectorAll('.close').forEach(button => {
 
 scrim.addEventListener('click', closePanel);
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closePanel();
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    closePanel();
+  }
 });
 
 /* =========================================================
@@ -1090,6 +1287,7 @@ applyTheme('dark');
 applyHandPreference('center');
 
 status.textContent = 'Ready · swipe from either edge';
+
 setTimeout(() => {
   status.style.opacity = '.35';
 }, 4500);
@@ -1098,5 +1296,6 @@ window.addEventListener('beforeunload', () => {
   gestures.forEach(g => g.destroy());
 });
 </script>
+
 </body>
 </html>
